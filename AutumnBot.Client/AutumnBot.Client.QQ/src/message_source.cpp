@@ -1,6 +1,7 @@
 #pragma once
 
-#include "log.hpp"
+#include "log.cpp"
+#include "handler.cpp"
 
 #include <cstdint>
 #include <mirai.h>
