@@ -5,14 +5,12 @@
 #include <WebSocketClient.h>
 #include <configor/json.hpp>
 
-using namespace configor;
-
 namespace AutumnBot::Client::QQ {
     struct Service_Request {
         std::string service;
         std::string body;
 
-        CONFIGOR_BIND(json::value, Service_Request, REQUIRED(service), REQUIRED(body))
+        CONFIGOR_BIND(configor::json::value, Service_Request, REQUIRED(service), REQUIRED(body))
     };
 
     enum class App_Type { SAY_HELLO };
@@ -39,7 +37,7 @@ namespace AutumnBot::Client::QQ {
 
       private:
         auto make() const noexcept -> std::string {
-            return json::dump(Service_Request{ SERVICE, m_body });
+            return configor::json::dump(Service_Request{ SERVICE, m_body });
         }
 
       private:

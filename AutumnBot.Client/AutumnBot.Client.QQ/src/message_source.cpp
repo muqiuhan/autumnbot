@@ -1,7 +1,7 @@
 #pragma once
 
-#include "log.cpp"
 #include "handler.cpp"
+#include "log.cpp"
 
 #include <cstdint>
 #include <mirai.h>
@@ -28,6 +28,8 @@ namespace AutumnBot::Client::QQ {
                     Log::error("Failed to re-establish connection with mirai-api-http -> " + std::string(e.what()));
                 }
             });
+
+            m_miraiBot.On<Cyan::FriendMessage>(Handler::friendMessageHandler);
         }
 
         ~Message_Source() {
