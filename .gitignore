@@ -1,0 +1,12 @@
+# CLion
+cmake-build-debug/
+.idea/
+
+# OCaml Dune
+_build/
+
+# VSCode
+.vscode/
+
+# Xmake
+.xmake/
