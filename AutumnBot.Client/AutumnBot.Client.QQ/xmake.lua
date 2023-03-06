@@ -48,6 +48,8 @@ add_requires("mirai-cpp", "spdlog", "LightWebSocketClient", "configor")
 
 target("AutumnBot.Client")
     set_kind("binary")
+    set_languages("c++17")
+
     add_files("src/*.cpp")
     add_includedirs("third-party/LightWebSocketClient/include", "third-party/configor/include")
     add_packages("mirai-cpp", "spdlog", "LightWebSocketClient", "configor")

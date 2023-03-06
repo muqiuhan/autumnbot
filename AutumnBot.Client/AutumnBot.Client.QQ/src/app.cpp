@@ -1,48 +1,12 @@
-#pragma once
-
-#include "client.cpp"
-
-#include <WebSocketClient.h>
-#include <configor/json.hpp>
+#include "include/app.h"
 
 namespace AutumnBot::Client::QQ {
-    struct Service_Request {
-        std::string service;
-        std::string body;
+    auto App<App_Type::SAY_HELLO>::request() noexcept -> std::string {
+        return m_client.request(make());
+    }
 
-        CONFIGOR_BIND(configor::json::value, Service_Request, REQUIRED(service), REQUIRED(body))
-    };
+    auto App<App_Type::SAY_HELLO>::make() const noexcept -> std::string {
+        return configor::json::dump(Service_Request{ "AutumnBot.Client.QQ", SERVICE, m_body });
+    }
 
-    enum class App_Type { SAY_HELLO };
-
-    template <App_Type _Tp_appType> class App {
-      public:
-        virtual auto request() const noexcept -> std::string = 0;
-
-      private:
-        virtual auto make() const noexcept -> std::string = 0;
-    };
-
-    template <> class App<App_Type::SAY_HELLO> {
-      public:
-        explicit App(std::string webSocketHostname, std::string webSocketPort, std::string body)
-            : m_body(std::move(body))
-            , m_client(Client(webSocketHostname, webSocketPort)) {
-            m_client.init();
-        }
-
-        auto request() noexcept -> std::string {
-            return m_client.request(make());
-        }
-
-      private:
-        auto make() const noexcept -> std::string {
-            return configor::json::dump(Service_Request{ SERVICE, m_body });
-        }
-
-      private:
-        const std::string         m_body;
-        inline static std::string SERVICE = "say hello";
-        Client                    m_client;
-    };
 } // namespace AutumnBot::Client::QQ

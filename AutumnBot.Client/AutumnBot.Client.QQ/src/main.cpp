@@ -1,4 +1,4 @@
-#include "message_source.cpp"
+#include "include/message_source.h"
 #include <memory>
 
 using namespace AutumnBot::Client::QQ;

@@ -1,18 +1,11 @@
-#pragma once
-
-#include <spdlog/spdlog.h>
+#include "include/log.h"
 
 namespace AutumnBot::Client::QQ {
-    class Log {
-      public:
-        inline static auto info(const std::string msg) noexcept -> void
-        {
-            spdlog::info("AutumnBot.Client.QQ: {}", msg);
-        }
+    auto Log::info(const std::string msg) noexcept -> void {
+        spdlog::info("AutumnBot.Client.QQ: {}", msg);
+    }
 
-        inline static auto error(const std::string msg) noexcept -> void
-        {
-            spdlog::error("AutumnBot.Client.QQ: {}", msg);
-        }
-    };
+    auto Log::error(const std::string msg) noexcept -> void {
+        spdlog::error("AutumnBot.Client.QQ: {}", msg);
+    }
 } // namespace AutumnBot::Client::QQ
