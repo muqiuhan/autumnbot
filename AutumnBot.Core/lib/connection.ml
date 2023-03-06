@@ -38,7 +38,7 @@ class core =
                 | Message.Service (header, _) -> Instance.services#put (header, client));
                message)
           |> Message.message_pool#put)
-        |> Domain.join
+        |> ignore
       | Websocket.Binary _ -> ()
 
     method on_close (client : Websocket.client) : unit =
@@ -49,3 +49,12 @@ class core =
       Log.info "New connection";
       self#add client
   end
+
+let connection_pool : core = new core
+
+let start () =
+  Log.info "Start AutumnBot.Core on ws://127.0.0.1:3000";
+  Domain.spawn (fun () ->
+    Websocket.run ~addr:"127.0.0.1" ~port:"3000" (connection_pool#make ()))
+  |> ignore
+;;

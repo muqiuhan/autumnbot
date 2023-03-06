@@ -1,4 +1,3 @@
 (executable
  (public_name core)
- (name main)
- (libraries core))
+ (libraries core_lib))

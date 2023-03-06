@@ -1,5 +1,6 @@
 open Base
 open Utils
+
 module Mutex = Stdlib.Mutex
 module Condition = Stdlib.Condition
 
@@ -81,3 +82,6 @@ class message_pool =
   end
 
 let message_pool : message_pool = new message_pool
+
+let get = message_pool#get
+let put = message_pool#put

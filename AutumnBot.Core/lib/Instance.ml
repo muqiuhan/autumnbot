@@ -31,6 +31,11 @@ class instances =
       Log.info ("Add instance: " ^ header);
       instances <- Set.add instances instance
 
+    method get_client (instance_header : string) : Websocket.client option =
+      Option.bind
+        (Set.find instances ~f:(fun (header, _) -> String.equal header instance_header))
+        ~f:(fun (_, client) -> Some client)
+
     method remove (instance_client : Websocket.client) : unit =
       match
         Set.find instances ~f:(fun (_, client) -> phys_equal client instance_client)
@@ -44,3 +49,5 @@ class instances =
 
 let clients = new instances
 let services = new instances
+let find_service = services#get_client
+let find_client = clients#get_client
