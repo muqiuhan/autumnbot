@@ -2,7 +2,7 @@
 
 namespace AutumnBot::Client::QQ {
     auto App<App_Type::SAY_HELLO>::request() noexcept -> std::string {
-        return m_client.request(make());
+        return client.request(make());
     }
 
     auto App<App_Type::SAY_HELLO>::make() const noexcept -> std::string {

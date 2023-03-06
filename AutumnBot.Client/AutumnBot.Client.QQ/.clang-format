@@ -9,7 +9,7 @@ AlignOperands:	true
 AlignTrailingComments:	true
 AllowShortBlocksOnASingleLine:	false
 AllowShortCaseLabelsOnASingleLine:	false
-AllowShortFunctionsOnASingleLine:	Empty
+AllowShortFunctionsOnASingleLine:	Inline
 AllowShortIfStatementsOnASingleLine:	false
 AllowShortLoopsOnASingleLine:	false
 AlwaysBreakAfterReturnType:	None

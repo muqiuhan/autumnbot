@@ -27,11 +27,8 @@ namespace AutumnBot::Client::QQ {
 
     template <> class App<App_Type::SAY_HELLO> {
       public:
-        explicit App(std::string webSocketHostname, std::string webSocketPort, std::string body)
-            : m_body(std::move(body))
-            , m_client(Client(webSocketHostname, webSocketPort)) {
-            m_client.init();
-        }
+        explicit App(std::string body)
+            : m_body(std::move(body)) {}
 
         auto request() noexcept -> std::string;
 
@@ -41,7 +38,7 @@ namespace AutumnBot::Client::QQ {
       private:
         const std::string         m_body;
         inline static std::string SERVICE = "say hello";
-        Client                    m_client;
+        inline static Client      client;
     };
 } // namespace AutumnBot::Client::QQ
 
