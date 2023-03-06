@@ -1,0 +1,15 @@
+{
+  "name": "autumnbot.service.sayhello",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "AutumnBot.Service.SayHello",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Muqiu Han",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.12.1"
+  }
+}
