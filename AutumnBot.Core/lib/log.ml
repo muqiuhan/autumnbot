@@ -1,1 +1,4 @@
-let info str = Simlog.info ("AutumnBot.Core: " ^ str)
+let info str =
+  Simlog.info ("AutumnBot.Core: " ^ str);
+  flush stdout
+;;

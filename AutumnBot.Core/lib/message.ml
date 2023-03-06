@@ -1,7 +1,7 @@
 open Base
 open Utils
-open Log
 module Mutex = Stdlib.Mutex
+module Condition = Stdlib.Condition
 
 type message =
   | Client of (header * client_message)
@@ -49,6 +49,7 @@ module Parser = struct
     let header : string =
       message |> Ocason.Basic.Util.key "header" |> Ocason.Basic.Util.to_string
     in
+    Log.info ("New message from : " ^ header);
     if String.contains header "AutumnBot.Client"
     then Client.parse header message
     else if String.contains header "AutumnBot.Service"
@@ -63,10 +64,11 @@ class message_pool =
   object
     val pool : message Stack.t = Stack.create ()
     val pool_mutex : Mutex.t = Mutex.create ()
+    val pool_cond : Condition.t = Condition.create ()
 
     method get () : message =
-      info "";
       Mutex.lock pool_mutex;
+      Condition.wait pool_cond pool_mutex;
       let message : message = Stack.pop_exn pool in
       Mutex.unlock pool_mutex;
       message
@@ -74,6 +76,7 @@ class message_pool =
     method put (message : message) : unit =
       Mutex.lock pool_mutex;
       Stack.push pool message;
+      Condition.broadcast pool_cond;
       Mutex.unlock pool_mutex
   end
 

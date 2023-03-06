@@ -6,6 +6,12 @@ ws.on("error", console.error);
 
 ws.on("open", function open() {
   console.log("Successfully connected to AutumnBot.Core");
+
+  ws.send({
+    header: "AutumnBot.Service.SayHello",
+    client: "",
+    body: "",
+  });
 });
 
 ws.on("message", function message(data) {
