@@ -19,34 +19,45 @@ and service_message =
   ; client_body : string
   }
 
-let parse (message : string) : message =
-  let message = Ocason.Basic.from_string message in
-  let header : string =
-    message |> Ocason.Basic.Util.key "header" |> Ocason.Basic.Util.to_string
-  in
-  if String.contains header "AutumnBot.Client"
-  then
-    Client
-      ( header
-      , { service =
-            message |> Ocason.Basic.Util.key "service" |> Ocason.Basic.Util.to_string
-        ; service_body =
-            message |> Ocason.Basic.Util.key "service" |> Ocason.Basic.Util.to_string
-        } )
-  else if message
-          |> Ocason.Basic.Util.key "header"
-          |> Ocason.Basic.Util.to_string
-          |> String.contains "AutumnBot.Service"
-  then
-    Service
-      ( header
-      , { client =
-            message |> Ocason.Basic.Util.key "service" |> Ocason.Basic.Util.to_string
-        ; client_body =
-            message |> Ocason.Basic.Util.key "service" |> Ocason.Basic.Util.to_string
-        } )
-  else failwith "Unknown message"
-;;
+module Parser = struct
+  module Client = struct
+    let parse (header : string) (message : Ocason.Basic.json) : message =
+      Client
+        ( header
+        , { service =
+              message |> Ocason.Basic.Util.key "service" |> Ocason.Basic.Util.to_string
+          ; service_body =
+              message |> Ocason.Basic.Util.key "service" |> Ocason.Basic.Util.to_string
+          } )
+    ;;
+  end
+
+  module Service = struct
+    let parse (header : string) (message : Ocason.Basic.json) : message =
+      Service
+        ( header
+        , { client =
+              message |> Ocason.Basic.Util.key "service" |> Ocason.Basic.Util.to_string
+          ; client_body =
+              message |> Ocason.Basic.Util.key "service" |> Ocason.Basic.Util.to_string
+          } )
+    ;;
+  end
+
+  let parse (message : string) : message =
+    let message = Ocason.Basic.from_string message in
+    let header : string =
+      message |> Ocason.Basic.Util.key "header" |> Ocason.Basic.Util.to_string
+    in
+    if String.contains header "AutumnBot.Client"
+    then Client.parse header message
+    else if String.contains header "AutumnBot.Service"
+    then Service.parse header message
+    else failwith "Unknown message"
+  ;;
+end
+
+let parse : string -> message = Parser.parse
 
 class message_pool =
   object

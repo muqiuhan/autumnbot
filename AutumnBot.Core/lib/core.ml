@@ -1,11 +1,6 @@
 open Ws_ocaml
-module Client = struct
-  type t =
-    { service : string [@key "service"]
-    ; body : string [@key "body"]
-    }
-  [@@deriving yojson]
-end
 
-let start () = 
-  Websocket.run
+let start () =
+  let message_pool : Connection.core = new Connection.core in
+  Websocket.run ~addr:"127.0.0.1" ~port:"3000" (message_pool#make ())
+;;
