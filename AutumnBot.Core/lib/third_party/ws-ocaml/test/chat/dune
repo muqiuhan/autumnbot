@@ -1,0 +1,3 @@
+(executable
+ (name chat)
+ (libraries ws_ocaml))

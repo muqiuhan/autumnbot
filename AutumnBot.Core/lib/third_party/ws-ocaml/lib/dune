@@ -1,0 +1,4 @@
+(library
+ (name ws_ocaml)
+ (public_name ws_ocaml)
+ (libraries unix threads))
