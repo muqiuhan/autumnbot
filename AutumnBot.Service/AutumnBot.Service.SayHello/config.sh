@@ -5,7 +5,7 @@ function build() {
 }
 
 function start() {
-    npm run
+    npm run start
 }
 
 
