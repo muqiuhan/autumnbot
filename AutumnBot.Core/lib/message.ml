@@ -1,6 +1,5 @@
 open Base
 open Utils
-
 module Mutex = Stdlib.Mutex
 module Condition = Stdlib.Condition
 
@@ -23,39 +22,53 @@ and service_message =
 module Parser = struct
   module Client = struct
     let parse (header : string) (message : Ocason.Basic.json) : message =
+      Log.debug ("New message from" ^ header);
       Client
         ( header
         , { service =
               message |> Ocason.Basic.Util.key "service" |> Ocason.Basic.Util.to_string
           ; service_body =
-              message |> Ocason.Basic.Util.key "service" |> Ocason.Basic.Util.to_string
+              message
+              |> Ocason.Basic.Util.key "service_body"
+              |> Ocason.Basic.Util.to_string
           } )
     ;;
   end
 
   module Service = struct
     let parse (header : string) (message : Ocason.Basic.json) : message =
+      Log.debug ("New message from" ^ header);
       Service
         ( header
         , { client =
-              message |> Ocason.Basic.Util.key "service" |> Ocason.Basic.Util.to_string
+              message |> Ocason.Basic.Util.key "client" |> Ocason.Basic.Util.to_string
           ; client_body =
-              message |> Ocason.Basic.Util.key "service" |> Ocason.Basic.Util.to_string
+              message
+              |> Ocason.Basic.Util.key "client_body"
+              |> Ocason.Basic.Util.to_string
           } )
     ;;
   end
 
   let parse (message : string) : message =
-    let message = Ocason.Basic.from_string message in
-    let header : string =
-      message |> Ocason.Basic.Util.key "header" |> Ocason.Basic.Util.to_string
-    in
-    Log.info ("New message from : " ^ header);
-    if String.contains header "AutumnBot.Client"
-    then Client.parse header message
-    else if String.contains header "AutumnBot.Service"
-    then Service.parse header message
-    else failwith "Unknown message"
+    Log.debug ("Parsing message : " ^ message);
+    try
+      let message = Ocason.Basic.from_string message in
+      let header : string =
+        message |> Ocason.Basic.Util.key "header" |> Ocason.Basic.Util.to_string
+      in
+      if String.contains header "AutumnBot.Client"
+      then Client.parse header message
+      else if String.contains header "AutumnBot.Service"
+      then Service.parse header message
+      else
+        raise
+          (Exception.Core_exn
+             (Exception.Unknown_message_type (Ocason.Basic.Util.to_string message)))
+    with
+    | Exception.Core_exn msg ->
+      Log.error (Exception.to_string msg);
+      failwith (Exception.to_string msg)
   ;;
 end
 
@@ -82,6 +95,5 @@ class message_pool =
   end
 
 let message_pool : message_pool = new message_pool
-
 let get = message_pool#get
 let put = message_pool#put

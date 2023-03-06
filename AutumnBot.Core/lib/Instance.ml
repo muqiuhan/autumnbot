@@ -28,7 +28,7 @@ class instances =
 
     method put (instance : Instance.t) : unit =
       let header, _ = instance in
-      Log.info ("Add instance: " ^ header);
+      Log.debug ("Add instance: " ^ header);
       instances <- Set.add instances instance
 
     method get_client (instance_header : string) : Websocket.client option =
@@ -43,7 +43,7 @@ class instances =
       | None -> ()
       | Some instance ->
         let header, _ = instance in
-        Log.info ("Remove instance: " ^ header);
+        Log.debug ("Remove instance: " ^ header);
         instances <- Set.remove instances instance
   end
 
