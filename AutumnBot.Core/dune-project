@@ -1,0 +1,25 @@
+(lang dune 3.6)
+
+(name core)
+
+(generate_opam_files true)
+
+(source
+ (github muqiuhan/AutumnBot))
+
+(authors "Muqiu Han")
+
+(maintainers "Muqiu Han")
+
+(license LICENSE)
+
+(documentation https://github.com/muqiuhan/AutumnBot)
+
+(package
+ (name core)
+ (synopsis "AutumnBot.Core")
+ (description "AutumnBot.Core")
+ (depends ocaml dune)
+ (tags (AutumnBot)))
+
+; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project

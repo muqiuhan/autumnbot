@@ -1,0 +1,3 @@
+(library
+ (name core)
+ (libraries base ws_ocaml simlog ocason))
