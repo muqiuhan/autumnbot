@@ -18,7 +18,6 @@ class core =
       Websocket.make_app ~on_connection ~on_message ~on_close ()
 
     method on_message (client : Websocket.client) (message : Websocket.message) : unit =
-      Log.debug "Receive message";
       Domain.spawn (fun () ->
         match message with
         | Websocket.Text message ->
@@ -40,9 +39,19 @@ class core =
 let connection_pool : core = new core
 
 let start () =
-  Log.debug "Try to start AutumnBot.Core at ws://127.0.0.1:3000";
   Domain.spawn (fun () ->
-    try Websocket.run ~addr:"127.0.0.1" ~port:"3000" (connection_pool#make ()) with
-    | _ -> Log.error "Unable to start AutumnBot.Core")
+    let rec start () =
+      try
+        Log.info "Try to start AutumnBot.Core Websocket server at ws://127.0.0.1:3000";
+        Websocket.run ~addr:"127.0.0.1" ~port:"3000" (connection_pool#make ())
+      with
+      | e ->
+        Unix.sleep 1;
+        Log.error
+          ("Unable to start AutumnBot.Core Websocket server at ws://127.0.0.1:3000 -> "
+          ^ Stdlib.Printexc.to_string e)
+        |> start
+    in
+    start ())
   |> ignore
 ;;
