@@ -4,7 +4,9 @@ module String = struct
   include String
 
   let contains (x : string) (s : string) : bool =
-    if String.is_empty x || String.is_empty s
+    if Int.(String.length x <> String.length s)
+    then false
+    else if String.is_empty x || String.is_empty s
     then false
     else (
       let bords (x : string) : int array =
