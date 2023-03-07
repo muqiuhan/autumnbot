@@ -50,7 +50,7 @@ module Parser = struct
     ;;
   end
 
-  let parse (message : string) : message =
+  let parse (message : string) : message option =
     Log.debug ("Parsing message : " ^ message);
     try
       let message = Ocason.Basic.from_string message in
@@ -58,9 +58,9 @@ module Parser = struct
         message |> Ocason.Basic.Util.key "header" |> Ocason.Basic.Util.to_string
       in
       if String.contains header "AutumnBot.Client"
-      then Client.parse header message
+      then Some (Client.parse header message)
       else if String.contains header "AutumnBot.Service"
-      then Service.parse header message
+      then Some (Service.parse header message)
       else
         raise
           (Exception.Core_exn
@@ -68,11 +68,14 @@ module Parser = struct
     with
     | Exception.Core_exn msg ->
       Log.error (Exception.to_string msg);
-      failwith (Exception.to_string msg)
+      None
+    | e ->
+      Log.error (Stdlib.Printexc.to_string e);
+      None
   ;;
 end
 
-let parse : string -> message = Parser.parse
+let parse : string -> message option = Parser.parse
 
 class message_pool =
   object

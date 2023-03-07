@@ -23,12 +23,12 @@ class core =
         | Websocket.Text message ->
           Bytes.to_string message
           |> Message.parse
-          |> (fun message ->
+          |> Option.bind ~f:(fun message ->
                (match message with
                 | Message.Client (header, _) -> Instance.clients#put (header, client)
                 | Message.Service (header, _) -> Instance.services#put (header, client));
-               message)
-          |> Message.message_pool#put
+               Some message)
+          |> Option.iter ~f:Message.message_pool#put
         | Websocket.Binary _ -> ())
       |> ignore
 
