@@ -1,5 +1,4 @@
 open Base
-open Utils
 module Mutex = Stdlib.Mutex
 module Condition = Stdlib.Condition
 
@@ -28,9 +27,7 @@ module Parser = struct
         , { service =
               message |> Ocason.Basic.Util.key "service" |> Ocason.Basic.Util.to_string
           ; service_body =
-              message
-              |> Ocason.Basic.Util.key "body"
-              |> Ocason.Basic.Util.to_string
+              message |> Ocason.Basic.Util.key "body" |> Ocason.Basic.Util.to_string
           } )
     ;;
   end
@@ -43,9 +40,7 @@ module Parser = struct
         , { client =
               message |> Ocason.Basic.Util.key "client" |> Ocason.Basic.Util.to_string
           ; client_body =
-              message
-              |> Ocason.Basic.Util.key "body"
-              |> Ocason.Basic.Util.to_string
+              message |> Ocason.Basic.Util.key "body" |> Ocason.Basic.Util.to_string
           } )
     ;;
   end
@@ -53,13 +48,13 @@ module Parser = struct
   let parse (message : string) : message option =
     Log.debug ("Parsing message : " ^ message);
     try
-      let message = Ocason.Basic.from_string message in
+      let message : Ocason.Basic.json = Ocason.Basic.from_string message in
       let header : string =
         message |> Ocason.Basic.Util.key "header" |> Ocason.Basic.Util.to_string
       in
-      if String.contains header "AutumnBot.Client"
+      if String.is_prefix ~prefix:"AutumnBot.Client" header
       then Some (Client.parse header message)
-      else if String.contains header "AutumnBot.Service"
+      else if String.is_prefix ~prefix:"AutumnBot.Service" header
       then Some (Service.parse header message)
       else
         raise
