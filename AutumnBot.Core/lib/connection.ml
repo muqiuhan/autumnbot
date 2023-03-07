@@ -40,9 +40,10 @@ let connection_pool : core = new core
 
 let start () =
   Domain.spawn (fun () ->
+    Log.info "Try to start AutumnBot.Core Websocket server at ws://127.0.0.1:3000";
     let rec start () =
       try
-        Log.info "Try to start AutumnBot.Core Websocket server at ws://127.0.0.1:3000";
+        Log.info "Try to restart AutumnBot.Core Websocket server at ws://127.0.0.1:3000";
         Websocket.run ~addr:"127.0.0.1" ~port:"3000" (connection_pool#make ())
       with
       | e ->

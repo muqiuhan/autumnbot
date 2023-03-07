@@ -29,7 +29,7 @@ module Parser = struct
               message |> Ocason.Basic.Util.key "service" |> Ocason.Basic.Util.to_string
           ; service_body =
               message
-              |> Ocason.Basic.Util.key "service_body"
+              |> Ocason.Basic.Util.key "body"
               |> Ocason.Basic.Util.to_string
           } )
     ;;
@@ -44,7 +44,7 @@ module Parser = struct
               message |> Ocason.Basic.Util.key "client" |> Ocason.Basic.Util.to_string
           ; client_body =
               message
-              |> Ocason.Basic.Util.key "client_body"
+              |> Ocason.Basic.Util.key "body"
               |> Ocason.Basic.Util.to_string
           } )
     ;;

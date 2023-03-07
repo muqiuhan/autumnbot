@@ -5,7 +5,7 @@ module String = struct
 
   let contains (x : string) (s : string) : bool =
     if String.is_empty x || String.is_empty s
-    then true
+    then false
     else (
       let bords (x : string) : int array =
         let m : int = String.length x in
