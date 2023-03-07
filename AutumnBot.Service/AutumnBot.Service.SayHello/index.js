@@ -7,7 +7,7 @@ ws.on("error", console.error);
 ws.on("open", function open() {
   console.log("Successfully connected to AutumnBot.Core");
 
-  ws.send(JSON.toString({
+  ws.send(JSON.stringify({
     header: "AutumnBot.Service.SayHello",
     client: "",
     body: "",
@@ -17,7 +17,7 @@ ws.on("open", function open() {
 ws.on("message", function message(data) {
   let header = JSON.parse(data)["header"];
 
-  ws.send(JSON.toString({
+  ws.send(JSON.stringify({
     header: "AutumnBot.Service.SayHello",
     client: header,
     body: "Hello!",
