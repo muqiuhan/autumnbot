@@ -1,5 +1,7 @@
 open Base
 open Ws_ocaml
+module Mutex = Stdlib.Mutex
+module Condition = Stdlib.Condition
 
 module Instance = struct
   module T = struct
@@ -24,17 +26,34 @@ class instances =
     val mutable instances : (Instance.t, Instance.comparator_witness) Set.t =
       Set.empty (module Instance)
 
-    method contain (instance : Instance.t) : unit = self#put instance
+    val mutex : Mutex.t = Mutex.create ()
+
+    method contain (instance : Instance.t) : unit =
+      let instance_header, _ = instance in
+      match
+        Set.find instances ~f:(fun (header, _) -> String.equal header instance_header)
+      with
+      | None ->
+        Log.info ("Add instance: " ^ instance_header);
+        self#put instance
+      | Some instance ->
+        Log.info ("Replace instance : " ^ instance_header);
+        self#put instance
 
     method put (instance : Instance.t) : unit =
-      let header, _ = instance in
-      Log.debug ("Add instance: " ^ header);
-      instances <- Set.add instances instance
+      Mutex.lock mutex;
+      instances <- Set.add instances instance;
+      Mutex.unlock mutex
 
     method get_client (instance_header : string) : Websocket.client option =
-      Option.bind
-        (Set.find instances ~f:(fun (header, _) -> String.equal header instance_header))
-        ~f:(fun (_, client) -> Some client)
+      Mutex.lock mutex;
+      let result =
+        Option.bind
+          (Set.find instances ~f:(fun (header, _) -> String.equal header instance_header))
+          ~f:(fun (_, client) -> Some client)
+      in
+      Mutex.unlock mutex;
+      result
 
     method remove (instance_client : Websocket.client) : unit =
       match
@@ -44,7 +63,9 @@ class instances =
       | Some instance ->
         let header, _ = instance in
         Log.debug ("Remove instance: " ^ header);
-        instances <- Set.remove instances instance
+        Mutex.lock mutex;
+        instances <- Set.remove instances instance;
+        Mutex.unlock mutex
   end
 
 let clients = new instances

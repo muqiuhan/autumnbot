@@ -25,8 +25,8 @@ class core =
           |> Message.parse
           |> Option.bind ~f:(fun message ->
                (match message with
-                | Message.Client (header, _) -> Instance.clients#put (header, client)
-                | Message.Service (header, _) -> Instance.services#put (header, client));
+                | Message.Client (header, _) -> Instance.clients#contain (header, client)
+                | Message.Service (header, _) -> Instance.services#contain (header, client));
                Some message)
           |> Option.iter ~f:Message.message_pool#put
         | Websocket.Binary _ -> ())
@@ -40,10 +40,9 @@ let connection_pool : core = new core
 
 let start () =
   Domain.spawn (fun () ->
-    Log.info "Try to start AutumnBot.Core Websocket server at ws://127.0.0.1:3000";
     let rec start () =
       try
-        Log.info "Try to restart AutumnBot.Core Websocket server at ws://127.0.0.1:3000";
+        Log.info "Try to start AutumnBot.Core Websocket server at ws://127.0.0.1:3000";
         Websocket.run ~addr:"127.0.0.1" ~port:"3000" (connection_pool#make ())
       with
       | e ->

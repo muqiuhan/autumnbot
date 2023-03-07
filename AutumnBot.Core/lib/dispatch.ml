@@ -25,6 +25,6 @@ let dispatch () : unit =
 let start () =
   Domain.spawn (fun _ ->
     Log.info "Start Dispatch";
-    dispatch)
+    dispatch ())
   |> ignore
 ;;

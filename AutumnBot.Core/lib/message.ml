@@ -18,10 +18,18 @@ and service_message =
   ; client_body : string
   }
 
+let get_message_header = function
+  | Client (header, _) | Service (header, _) -> header
+;;
+
+let is_mount_message = function
+  | Client (_, { service; _ }) -> String.is_empty service
+  | Service (_, { client; _ }) -> String.is_empty client
+;;
+
 module Parser = struct
   module Client = struct
     let parse (header : string) (message : Ocason.Basic.json) : message =
-      Log.debug ("New message from" ^ header);
       Client
         ( header
         , { service =
@@ -34,7 +42,6 @@ module Parser = struct
 
   module Service = struct
     let parse (header : string) (message : Ocason.Basic.json) : message =
-      Log.debug ("New message from" ^ header);
       Service
         ( header
         , { client =
@@ -75,21 +82,28 @@ let parse : string -> message option = Parser.parse
 class message_pool =
   object
     val pool : message Stack.t = Stack.create ()
-    val pool_mutex : Mutex.t = Mutex.create ()
-    val pool_cond : Condition.t = Condition.create ()
+    val mutex : Mutex.t = Mutex.create ()
+    val nonempty : Condition.t = Condition.create ()
 
     method get () : message =
-      Mutex.lock pool_mutex;
-      Condition.wait pool_cond pool_mutex;
-      let message : message = Stack.pop_exn pool in
-      Mutex.unlock pool_mutex;
-      message
+      Mutex.lock mutex;
+      while Stack.is_empty pool do
+        Condition.wait nonempty mutex
+      done;
+      let v = Stack.pop_exn pool in
+      Mutex.unlock mutex;
+      v
 
     method put (message : message) : unit =
-      Mutex.lock pool_mutex;
-      Stack.push pool message;
-      Condition.broadcast pool_cond;
-      Mutex.unlock pool_mutex
+      if is_mount_message message
+      then Log.info ("New mount message from " ^ get_message_header message)
+      else (
+        Log.info ("New message from " ^ get_message_header message);
+        Mutex.lock mutex;
+        let was_empty = Stack.is_empty pool in
+        Stack.push pool message;
+        if was_empty then Condition.broadcast nonempty;
+        Mutex.unlock mutex)
   end
 
 let message_pool : message_pool = new message_pool
