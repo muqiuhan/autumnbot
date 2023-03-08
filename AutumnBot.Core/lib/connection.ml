@@ -36,13 +36,24 @@ let start () =
   Domain.spawn (fun () ->
     let rec start () =
       try
-        Log.info "Try to start AutumnBot.Core Websocket server at ws://127.0.0.1:3000";
-        Websocket.run ~addr:"127.0.0.1" ~port:"3000" (connection_pool#make ())
+        Log.info
+          ("Connection: Try to start AutumnBot.Core Websocket server at ws://"
+          ^ Config.websocket_hostname
+          ^ ":"
+          ^ Config.websocket_port);
+        Websocket.run
+          ~addr:Config.websocket_hostname
+          ~port:Config.websocket_port
+          (connection_pool#make ())
       with
       | e ->
-        Unix.sleep 1;
+        Unix.sleep 3;
         Log.error
-          ("Unable to start AutumnBot.Core Websocket server at ws://127.0.0.1:3000 -> "
+          ("Connection: Unable to start AutumnBot.Core Websocket server at ws://"
+          ^ Config.websocket_hostname
+          ^ ":"
+          ^ Config.websocket_port
+          ^ " -> "
           ^ Stdlib.Printexc.to_string e)
         |> start
     in
