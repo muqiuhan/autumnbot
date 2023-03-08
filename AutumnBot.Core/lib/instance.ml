@@ -59,24 +59,14 @@ class instances =
       Mutex.unlock mutex;
       result
 
-    method get_header (instance_client : Websocket.client) : string option =
-      Mutex.lock mutex;
-      let result =
-        Option.bind
-          (Set.find instances ~f:(fun (_, client) -> phys_equal client instance_client))
-          ~f:(fun (header, _) -> Some header)
-      in
-      Mutex.unlock mutex;
-      result
-
-    method remove (instance_client : Websocket.client) : unit =
+    method remove (instance_header : string) : unit =
       match
-        Set.find instances ~f:(fun (_, client) -> phys_equal client instance_client)
+        Set.find instances ~f:(fun (header, _) -> String.equal instance_header header)
       with
       | None -> ()
       | Some instance ->
         let header, _ = instance in
-        Log.debug ("Remove instance: " ^ header);
+        Log.info ("Remove instance: " ^ header);
         Mutex.lock mutex;
         instances <- Set.remove instances instance;
         Mutex.unlock mutex
@@ -86,7 +76,3 @@ let clients = new instances
 let services = new instances
 let find_service = services#get_client
 let find_client = clients#get_client
-let find_service_header = services#get_header
-let find_client_header = clients#get_header
-let remove_service = services#remove
-let remove_client = clients#remove

@@ -23,15 +23,32 @@ let get_message_header = function
 ;;
 
 let is_mount_message = function
-  | Client (_, { service; _ }) -> String.is_empty service
-  | Service (_, { client; _ }) -> String.is_empty client
+  | Client (_, { service; _ }) -> String.equal service "mount"
+  | Service (_, { client; _ }) -> String.equal client "mount"
+;;
+
+let is_umount_message = function
+  | Client (_, { service; _ }) -> String.equal service "umount"
+  | Service (_, { client; _ }) -> String.equal client "umount"
+;;
+
+let header (message : Ocason.Basic.json) =
+  message |> Ocason.Basic.Util.key "header" |> Ocason.Basic.Util.to_string
+;;
+
+let is_service_message (message : Ocason.Basic.json) : bool =
+  if String.is_prefix ~prefix:"AutumnBot.Service" (header message) then true else false
+;;
+
+let is_client_message (message : Ocason.Basic.json) : bool =
+  if String.is_prefix ~prefix:"AutumnBot.Client" (header message) then true else false
 ;;
 
 module Parser = struct
   module Client = struct
-    let parse (header : string) (message : Ocason.Basic.json) : message =
+    let parse (message : Ocason.Basic.json) : message =
       Client
-        ( header
+        ( header message
         , { service =
               message |> Ocason.Basic.Util.key "service" |> Ocason.Basic.Util.to_string
           ; service_body =
@@ -41,9 +58,9 @@ module Parser = struct
   end
 
   module Service = struct
-    let parse (header : string) (message : Ocason.Basic.json) : message =
+    let parse (message : Ocason.Basic.json) : message =
       Service
-        ( header
+        ( header message
         , { client =
               message |> Ocason.Basic.Util.key "client" |> Ocason.Basic.Util.to_string
           ; client_body =
@@ -55,14 +72,11 @@ module Parser = struct
   let parse (message : string) : message option =
     Log.debug ("Parsing message : " ^ message);
     try
-      let message : Ocason.Basic.json = Ocason.Basic.from_string message in
-      let header : string =
-        message |> Ocason.Basic.Util.key "header" |> Ocason.Basic.Util.to_string
-      in
-      if String.is_prefix ~prefix:"AutumnBot.Client" header
-      then Some (Client.parse header message)
-      else if String.is_prefix ~prefix:"AutumnBot.Service" header
-      then Some (Service.parse header message)
+      let message = Ocason.Basic.from_string message in
+      if is_client_message message
+      then Some (Client.parse message)
+      else if is_service_message message
+      then Some (Service.parse message)
       else
         raise
           (Exception.Core_exn
@@ -96,7 +110,9 @@ class message_pool =
 
     method put (message : message) : unit =
       if is_mount_message message
-      then Log.info ("New mount message from " ^ get_message_header message)
+      then Log.info ("A mount message from " ^ get_message_header message)
+      else if is_umount_message message
+      then Log.info ("A umount message from " ^ get_message_header message)
       else (
         Log.info ("New message from " ^ get_message_header message);
         Mutex.lock mutex;

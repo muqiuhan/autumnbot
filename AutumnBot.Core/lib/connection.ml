@@ -32,21 +32,7 @@ class core =
         | Websocket.Binary _ -> ())
       |> ignore
 
-    method on_close (client : Websocket.client) : unit =
-      let _remove_instance =
-        match Instance.find_service_header client with
-        | None ->
-          (match Instance.find_client_header client with
-           | None -> Log.error "Service or Client not found!"
-           | Some client_header ->
-             Instance.remove_client client;
-             Log.info ("Client disconnect : " ^ client_header))
-        | Some service_header ->
-          Instance.remove_service client;
-          Log.info ("Service disconnect : " ^ service_header)
-      in
-      self#remove client
-
+    method on_close (client : Websocket.client) : unit = self#remove client
     method on_connection (client : Websocket.client) : unit = self#add client
   end
 

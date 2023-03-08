@@ -11,8 +11,8 @@ ws.on("open", function open() {
   // Mount message
   ws.send(JSON.stringify({
     header: "AutumnBot.Client.SayHello",
-    service: "",
-    body: "",
+    service: "mount",
+    body: ""
   }));
 
   // Request service
@@ -20,6 +20,14 @@ ws.on("open", function open() {
     header: "AutumnBot.Client.SayHello",
     service: "AutumnBot.Service.SayHello",
     body: "Hi",
+  }));
+});
+
+ws.on("close", function close(code, reason) {
+  ws.send(JSON.stringify({
+    header: "AutumnBot.Client.SayHello",
+    service: "umount",
+    body: ""
   }));
 });
 
