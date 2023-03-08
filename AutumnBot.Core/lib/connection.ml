@@ -22,7 +22,7 @@ class core =
         match message with
         | Websocket.Text message ->
           Message.parse (Bytes.to_string message) client
-          |> Option.iter ~f:Message.message_pool#put
+          |> Option.iter ~f:Message.Pool.message_pool#put
         | Websocket.Binary _ -> ())
       |> ignore
 

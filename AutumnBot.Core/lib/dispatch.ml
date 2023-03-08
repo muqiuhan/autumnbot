@@ -7,7 +7,12 @@ module Client = struct
     Log.info ("Dispatch: A mount message from " ^ header);
     Instance.clients#contain (header, client)
   ;;
-
+(*
+  let umount (client : Websocket.client) (header : string) : unit =
+    Log.info ("Dispatch: A umount message from " ^ header);
+    Instance.clients#remove header
+  ;;
+ *)
   let dispatch (client : Websocket.client) (message : Message.client_message) : unit =
     match message with
     | { client_message_header; client_message_service; client_message_body } ->
@@ -44,7 +49,12 @@ module Service = struct
     Log.info ("Dispatch: A mount message from " ^ header);
     Instance.services#contain (header, client)
   ;;
-
+(*
+  let umount (client : Websocket.client) (header : string) : unit =
+    Log.info ("Dispatch: A umount message from " ^ header);
+    Instance.clients#remove header
+  ;;
+ *)
   let dispatch (client : Websocket.client) (message : Message.service_message) : unit =
     match message with
     | { service_message_header; service_message_client; service_message_body } ->
@@ -79,7 +89,7 @@ end
 let rec dispatch () : unit =
   try
     while true do
-      match Message.get () with
+      match Message.Pool.get () with
       | Message.Client (client, message) -> Client.dispatch client message
       | Message.Service (client, message) -> Service.dispatch client message
     done

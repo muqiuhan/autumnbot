@@ -77,3 +77,5 @@ let services = new instances
 
 let find_service = services#get_client
 let find_client = clients#get_client
+let remove_client = clients#remove
+let remove_service = services#remove

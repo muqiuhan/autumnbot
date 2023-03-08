@@ -18,6 +18,7 @@ and service_message =
   ; service_message_client : string
   ; service_message_body : string
   }
+
 and t = message
 
 let get_message_header = function
@@ -100,30 +101,32 @@ end
 
 let parse : string -> Websocket.client -> message option = Parser.parse
 
-class message_pool =
-  object
-    val pool : message Stack.t = Stack.create ()
-    val mutex : Mutex.t = Mutex.create ()
-    val nonempty : Condition.t = Condition.create ()
+module Pool = struct
+  class t =
+    object
+      val pool : message Stack.t = Stack.create ()
+      val mutex : Mutex.t = Mutex.create ()
+      val nonempty : Condition.t = Condition.create ()
 
-    method get () : message =
-      Mutex.lock mutex;
-      while Stack.is_empty pool do
-        Condition.wait nonempty mutex
-      done;
-      let v = Stack.pop_exn pool in
-      Mutex.unlock mutex;
-      v
+      method get () : message =
+        Mutex.lock mutex;
+        while Stack.is_empty pool do
+          Condition.wait nonempty mutex
+        done;
+        let v = Stack.pop_exn pool in
+        Mutex.unlock mutex;
+        v
 
-    method put (message : message) : unit =
-      Log.info ("Message: New from " ^ get_message_header message);
-      Mutex.lock mutex;
-      let was_empty = Stack.is_empty pool in
-      Stack.push pool message;
-      if was_empty then Condition.broadcast nonempty;
-      Mutex.unlock mutex
-  end
+      method put (message : message) : unit =
+        Log.info ("Message: New from " ^ get_message_header message);
+        Mutex.lock mutex;
+        let was_empty = Stack.is_empty pool in
+        Stack.push pool message;
+        if was_empty then Condition.broadcast nonempty;
+        Mutex.unlock mutex
+    end
 
-let message_pool : message_pool = new message_pool
-let get = message_pool#get
-let put = message_pool#put
+  let message_pool : t = new t
+  let get = message_pool#get
+  let put = message_pool#put
+end
