@@ -5,7 +5,7 @@ module Domain = Stdlib.Domain
 
 module Client = struct
   let mount (client : Websocket.client) (header : string) : unit =
-    Log.info ("A mount message from " ^ header);
+    Log.info ("Dispatch: A mount message from " ^ header);
     Instance.clients#contain (header, client)
   ;;
 
@@ -13,7 +13,7 @@ module Client = struct
     match message with
     | { client_message_header; client_message_service; client_message_body } ->
       Log.info
-        ("Dispatch process a client message from "
+        ("Dispatch: Process a client message from "
         ^ client_message_header
         ^ " to "
         ^ client_message_service);
@@ -41,7 +41,7 @@ end
 
 module Service = struct
   let mount (client : Websocket.client) (header : string) : unit =
-    Log.info ("A mount message from " ^ header);
+    Log.info ("Dispatch: A mount message from " ^ header);
     Instance.services#contain (header, client)
   ;;
 
@@ -49,7 +49,7 @@ module Service = struct
     match message with
     | { service_message_header; service_message_client; service_message_body } ->
       Log.info
-        ("Dispatch process a service message from "
+        ("Dispatch : Process a service message from "
         ^ service_message_header
         ^ " to "
         ^ service_message_client);
@@ -90,7 +90,7 @@ let rec dispatch () : unit =
 
 let start () =
   Domain.spawn (fun _ ->
-    Log.info "Start Dispatch";
+    Log.info "Dispatch: Start";
     dispatch ())
   |> ignore
 ;;

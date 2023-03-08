@@ -34,14 +34,14 @@ class instances =
         Set.find instances ~f:(fun (header, _) -> String.equal header instance_header)
       with
       | None ->
-        Log.info ("Add instance: " ^ instance_header);
+        Log.info ("Instance: New " ^ instance_header);
         self#put instance
       | Some (_, client) ->
         let _, instance_client = instance in
         if phys_equal client instance_client
         then ()
         else (
-          Log.info ("Replace instance: " ^ instance_header);
+          Log.info ("Instance: Replace" ^ instance_header);
           self#put instance)
 
     method put (instance : Instance.t) : unit =
@@ -66,7 +66,7 @@ class instances =
       | None -> ()
       | Some instance ->
         let header, _ = instance in
-        Log.info ("Remove instance: " ^ header);
+        Log.info ("Instance: Remove " ^ header);
         Mutex.lock mutex;
         instances <- Set.remove instances instance;
         Mutex.unlock mutex
@@ -74,5 +74,6 @@ class instances =
 
 let clients = new instances
 let services = new instances
+
 let find_service = services#get_client
 let find_client = clients#get_client

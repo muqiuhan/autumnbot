@@ -1,5 +1,5 @@
 let start () =
-  Log.info "Start AutumnBot.Core";
+  Log.info "Core: start";
   Connection.start ();
   Dispatch.start ()
 ;;
