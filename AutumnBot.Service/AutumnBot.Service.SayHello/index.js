@@ -11,7 +11,7 @@ ws.on("open", function open() {
   // Mount message
   ws.send(JSON.stringify({
     header: "AutumnBot.Service.SayHello",
-    client: "",
+    client: "mount",
     body: "",
   }));
 });
