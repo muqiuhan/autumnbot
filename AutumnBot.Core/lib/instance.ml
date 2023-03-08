@@ -36,9 +36,13 @@ class instances =
       | None ->
         Log.info ("Add instance: " ^ instance_header);
         self#put instance
-      | Some instance ->
-        Log.info ("Replace instance : " ^ instance_header);
-        self#put instance
+      | Some (_, client) ->
+        let _, instance_client = instance in
+        if phys_equal client instance_client
+        then ()
+        else (
+          Log.info ("Replace instance: " ^ instance_header);
+          self#put instance)
 
     method put (instance : Instance.t) : unit =
       Mutex.lock mutex;
@@ -51,6 +55,16 @@ class instances =
         Option.bind
           (Set.find instances ~f:(fun (header, _) -> String.equal header instance_header))
           ~f:(fun (_, client) -> Some client)
+      in
+      Mutex.unlock mutex;
+      result
+
+    method get_header (instance_client : Websocket.client) : string option =
+      Mutex.lock mutex;
+      let result =
+        Option.bind
+          (Set.find instances ~f:(fun (_, client) -> phys_equal client instance_client))
+          ~f:(fun (header, _) -> Some header)
       in
       Mutex.unlock mutex;
       result
@@ -72,3 +86,7 @@ let clients = new instances
 let services = new instances
 let find_service = services#get_client
 let find_client = clients#get_client
+let find_service_header = services#get_header
+let find_client_header = clients#get_header
+let remove_service = services#remove
+let remove_client = clients#remove
