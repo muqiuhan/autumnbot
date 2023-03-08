@@ -220,11 +220,22 @@ fi
 
 - `config.sh`并不是客户端或服务端项目自身的构建文件，项目使用什么构建工具并不重要，只需要在`config.sh`中调用对应的工具就行
 
-### 说明
 暮秋并不规定需要用什么语言编写服务端或客户端，只要能解析JSON，建立Websocket通信即可，上述示例并不是一个概念上完整的粒子。
 
 例如： 暮秋拥有一个QQ客户端(AutumnBot.Client.QQ)，用于和QQ交互消息，这个QQ客户端具有很多服务，当QQ客户端收到外界的相关消息后，可以向`SayHello`的服务端(AutumnBot.Service.SayHello)请求相关数据用于回复外界。
 
+### Commit Message规范
+对于每一个Commit，说明是来自哪个模块的更改，例如来自内核：
+```
+AutumnBot.Core: Separate message and message_pool
+```
+
+### .gitignore
+加入新的客户端或服务端，需要在暮秋根目录下的`.gitignore`文件中（即[./.gitignore](./.gitignore))统一添加
+
+## 命名
+- 新的客户端必须以`AutumnBot.Client.`起始后跟客户端名
+- 新的服务端必须以`AutumnBot.Service.`起始后跟服务名
 
 ## License
 The MIT License (MIT)
