@@ -21,13 +21,7 @@ class core =
       Domain.spawn (fun () ->
         match message with
         | Websocket.Text message ->
-          Bytes.to_string message
-          |> Message.parse
-          |> Option.bind ~f:(fun message ->
-               (match message with
-                | Message.Client (header, _) -> Instance.clients#contain (header, client)
-                | Message.Service (header, _) -> Instance.services#contain (header, client));
-               Some message)
+          Message.parse (Bytes.to_string message) client
           |> Option.iter ~f:Message.message_pool#put
         | Websocket.Binary _ -> ())
       |> ignore

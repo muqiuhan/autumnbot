@@ -1,46 +1,86 @@
 open Base
 open Ws_ocaml
+open Utils
 module Domain = Stdlib.Domain
 
-let check_send_status = function
-  | true -> Log.info "Processed successfully"
-  | false -> Log.error "Processing failed"
-;;
+module Client = struct
+  let mount (client : Websocket.client) (header : string) : unit =
+    Log.info ("A mount message from " ^ header);
+    Instance.clients#contain (header, client)
+  ;;
+
+  let dispatch (client : Websocket.client) (message : Message.client_message) : unit =
+    match message with
+    | { client_message_header; client_message_service; client_message_body } ->
+      Log.info
+        ("Dispatch process a client message from "
+        ^ client_message_header
+        ^ " to "
+        ^ client_message_service);
+      if Message.is_mount_message (Message.Client (client, message))
+      then mount client client_message_header
+      else
+        Option.iter (Instance.find_client client_message_header) ~f:(fun client ->
+          match Instance.find_service client_message_service with
+          | None ->
+            Exception.raise
+              client
+              (Exception.Service_not_found_exn client_message_service)
+          | Some service ->
+            Websocket.send_text
+              service
+              (Ocason.Basic.JsonObject
+                 [ "header", Ocason.Basic.JsonString client_message_header
+                 ; "body", Ocason.Basic.JsonString client_message_body
+                 ]
+              |> Ocason.Basic.to_string
+              |> Bytes.of_string)
+            |> check_send_status)
+  ;;
+end
+
+module Service = struct
+  let mount (client : Websocket.client) (header : string) : unit =
+    Log.info ("A mount message from " ^ header);
+    Instance.services#contain (header, client)
+  ;;
+
+  let dispatch (client : Websocket.client) (message : Message.service_message) : unit =
+    match message with
+    | { service_message_header; service_message_client; service_message_body } ->
+      Log.info
+        ("Dispatch process a service message from "
+        ^ service_message_header
+        ^ " to "
+        ^ service_message_client);
+      if Message.is_mount_message (Message.Service (client, message))
+      then mount client service_message_header
+      else
+        Option.iter (Instance.find_client service_message_header) ~f:(fun client ->
+          match Instance.find_service service_message_client with
+          | None ->
+            Exception.raise
+              client
+              (Exception.Service_not_found_exn service_message_client)
+          | Some client ->
+            Websocket.send_text
+              client
+              (Ocason.Basic.JsonObject
+                 [ "header", Ocason.Basic.JsonString service_message_header
+                 ; "body", Ocason.Basic.JsonString service_message_body
+                 ]
+              |> Ocason.Basic.to_string
+              |> Bytes.of_string)
+            |> check_send_status)
+  ;;
+end
 
 let rec dispatch () : unit =
   try
     while true do
       match Message.get () with
-      | Message.Client (header, { service; service_body }) ->
-        Option.iter (Instance.find_client header) ~f:(fun client ->
-          Log.debug ("Dispatch process a client message from " ^ header ^ " to " ^ service);
-          match Instance.find_service service with
-          | None -> Exception.raise client (Exception.Service_not_found_exn service)
-          | Some service ->
-            Websocket.send_text
-              service
-              (Ocason.Basic.JsonObject
-                 [ "header", Ocason.Basic.JsonString header
-                 ; "body", Ocason.Basic.JsonString service_body
-                 ]
-              |> Ocason.Basic.to_string
-              |> Bytes.of_string)
-            |> check_send_status)
-      | Message.Service (header, { client; client_body }) ->
-        Option.iter (Instance.find_service header) ~f:(fun service ->
-          Log.debug ("Dispatch process a service message from " ^ header ^ " to " ^ client);
-          match Instance.find_client client with
-          | None -> Exception.raise service (Exception.Client_not_found_exn client)
-          | Some client ->
-            Websocket.send_text
-              client
-              (Ocason.Basic.JsonObject
-                 [ "header", Ocason.Basic.JsonString header
-                 ; "body", Ocason.Basic.JsonString client_body
-                 ]
-              |> Ocason.Basic.to_string
-              |> Bytes.of_string)
-            |> check_send_status)
+      | Message.Client (client, message) -> Client.dispatch client message
+      | Message.Service (client, message) -> Service.dispatch client message
     done
   with
   | e ->

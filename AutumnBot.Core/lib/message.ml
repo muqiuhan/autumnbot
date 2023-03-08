@@ -1,35 +1,42 @@
 open Base
+open Ws_ocaml
 module Mutex = Stdlib.Mutex
 module Condition = Stdlib.Condition
 
 type message =
-  | Client of (header * client_message)
-  | Service of (header * service_message)
-
-and header = string
+  | Client of (Websocket.client * client_message)
+  | Service of (Websocket.client * service_message)
 
 and client_message =
-  { service : string
-  ; service_body : string
+  { client_message_header : string
+  ; client_message_service : string
+  ; client_message_body : string
   }
 
 and service_message =
-  { client : string
-  ; client_body : string
+  { service_message_header : string
+  ; service_message_client : string
+  ; service_message_body : string
   }
+and t = message
 
 let get_message_header = function
-  | Client (header, _) | Service (header, _) -> header
+  | Client (_, { client_message_header; _ }) -> client_message_header
+  | Service (_, { service_message_header; _ }) -> service_message_header
 ;;
 
 let is_mount_message = function
-  | Client (_, { service; _ }) -> String.equal service "mount"
-  | Service (_, { client; _ }) -> String.equal client "mount"
+  | Client (_, { client_message_service; _ }) ->
+    String.equal client_message_service "mount"
+  | Service (_, { service_message_client; _ }) ->
+    String.equal service_message_client "mount"
 ;;
 
 let is_umount_message = function
-  | Client (_, { service; _ }) -> String.equal service "umount"
-  | Service (_, { client; _ }) -> String.equal client "umount"
+  | Client (_, { client_message_service; _ }) ->
+    String.equal client_message_service "umount"
+  | Service (_, { service_message_client; _ }) ->
+    String.equal service_message_client "umount"
 ;;
 
 let header (message : Ocason.Basic.json) =
@@ -46,37 +53,37 @@ let is_client_message (message : Ocason.Basic.json) : bool =
 
 module Parser = struct
   module Client = struct
-    let parse (message : Ocason.Basic.json) : message =
-      Client
-        ( header message
-        , { service =
-              message |> Ocason.Basic.Util.key "service" |> Ocason.Basic.Util.to_string
-          ; service_body =
-              message |> Ocason.Basic.Util.key "body" |> Ocason.Basic.Util.to_string
-          } )
+    let parse (message : Ocason.Basic.json) : client_message =
+      let client_message_header = header message
+      and client_message_service =
+        message |> Ocason.Basic.Util.key "service" |> Ocason.Basic.Util.to_string
+      and client_message_body =
+        message |> Ocason.Basic.Util.key "body" |> Ocason.Basic.Util.to_string
+      in
+      { client_message_header; client_message_service; client_message_body }
     ;;
   end
 
   module Service = struct
-    let parse (message : Ocason.Basic.json) : message =
-      Service
-        ( header message
-        , { client =
-              message |> Ocason.Basic.Util.key "client" |> Ocason.Basic.Util.to_string
-          ; client_body =
-              message |> Ocason.Basic.Util.key "body" |> Ocason.Basic.Util.to_string
-          } )
+    let parse (message : Ocason.Basic.json) : service_message =
+      let service_message_header = header message
+      and service_message_client =
+        message |> Ocason.Basic.Util.key "client" |> Ocason.Basic.Util.to_string
+      and service_message_body =
+        message |> Ocason.Basic.Util.key "body" |> Ocason.Basic.Util.to_string
+      in
+      { service_message_header; service_message_client; service_message_body }
     ;;
   end
 
-  let parse (message : string) : message option =
+  let parse (message : string) (client : Websocket.client) : message option =
     Log.debug ("Parsing message : " ^ message);
     try
       let message = Ocason.Basic.from_string message in
       if is_client_message message
-      then Some (Client.parse message)
+      then Some (Client (client, Client.parse message))
       else if is_service_message message
-      then Some (Service.parse message)
+      then Some (Service (client, Service.parse message))
       else
         raise
           (Exception.Core_exn
@@ -91,7 +98,7 @@ module Parser = struct
   ;;
 end
 
-let parse : string -> message option = Parser.parse
+let parse : string -> Websocket.client -> message option = Parser.parse
 
 class message_pool =
   object
@@ -109,17 +116,12 @@ class message_pool =
       v
 
     method put (message : message) : unit =
-      if is_mount_message message
-      then Log.info ("A mount message from " ^ get_message_header message)
-      else if is_umount_message message
-      then Log.info ("A umount message from " ^ get_message_header message)
-      else (
-        Log.info ("New message from " ^ get_message_header message);
-        Mutex.lock mutex;
-        let was_empty = Stack.is_empty pool in
-        Stack.push pool message;
-        if was_empty then Condition.broadcast nonempty;
-        Mutex.unlock mutex)
+      Log.info ("New message from " ^ get_message_header message);
+      Mutex.lock mutex;
+      let was_empty = Stack.is_empty pool in
+      Stack.push pool message;
+      if was_empty then Condition.broadcast nonempty;
+      Mutex.unlock mutex
   end
 
 let message_pool : message_pool = new message_pool
