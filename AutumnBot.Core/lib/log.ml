@@ -16,5 +16,5 @@ let error (msg : string) : unit =
   |> Stdlib.Printexc.raw_backtrace_to_string
   |> String.chop_suffix_if_exists ~suffix:"\n"
   |> String.split ~on:'\n'
-  |> List.iter ~f:(fun msg -> error ("-- CALLSTACK: " ^ msg))
+  |> List.iter ~f:(fun msg -> error ("  CALLSTACK: " ^ msg))
 ;;
