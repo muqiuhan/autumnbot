@@ -60,3 +60,8 @@ let start () =
     start ())
   |> ignore
 ;;
+
+let send (client : Websocket.client) (data : Ocason.Basic.json) : unit =
+  Websocket.send_text client (data |> Ocason.Basic.to_string |> Bytes.of_string)
+  |> check_send_status
+;;

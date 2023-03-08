@@ -77,7 +77,7 @@ module Parser = struct
   end
 
   let parse (message : string) (client : Websocket.client) : message option =
-    Log.debug ("Parsing message : " ^ message);
+    Log.debug ("Message: Parsing" ^ message);
     try
       let message = Ocason.Basic.from_string message in
       if is_client_message message
@@ -116,7 +116,7 @@ class message_pool =
       v
 
     method put (message : message) : unit =
-      Log.info ("New message from " ^ get_message_header message);
+      Log.info ("Message: New from " ^ get_message_header message);
       Mutex.lock mutex;
       let was_empty = Stack.is_empty pool in
       Stack.push pool message;
