@@ -9,17 +9,19 @@ module Instance = struct
 
     let compare ((header_x, _) : t) ((header_y, _) : t) : int =
       String.compare header_x header_y
+    ;;
 
     let sexp_of_t (instance : t) : Sexp.t =
       let (header : string), _ = instance in
       List [Atom header]
+    ;;
   end
 
   include T
   include Comparator.Make (T)
 end
 
-class instances =
+class t =
   object (self)
     val mutable instances : (Instance.t, Instance.comparator_witness) Set.t =
       Set.empty (module Instance)
@@ -29,8 +31,7 @@ class instances =
     method contain (instance : Instance.t) : unit =
       let instance_header, _ = instance in
       match
-        Set.find instances ~f:(fun (header, _) ->
-            String.equal header instance_header)
+        Set.find instances ~f:(fun (header, _) -> String.equal header instance_header)
       with
       | None ->
         Log.info ("Instance: New " ^ instance_header);
@@ -40,7 +41,7 @@ class instances =
         if phys_equal client instance_client then
           ()
         else (
-          Log.info ("Instance: Replace" ^ instance_header);
+          Log.info ("Instance: Replace " ^ instance_header);
           self#put instance)
 
     method put (instance : Instance.t) : unit =
@@ -52,8 +53,7 @@ class instances =
       Mutex.lock mutex;
       let result =
         Option.bind
-          (Set.find instances ~f:(fun (header, _) ->
-               String.equal header instance_header))
+          (Set.find instances ~f:(fun (header, _) -> String.equal header instance_header))
           ~f:(fun (_, client) -> Some client)
       in
       Mutex.unlock mutex;
@@ -61,8 +61,7 @@ class instances =
 
     method remove (instance_header : string) : unit =
       match
-        Set.find instances ~f:(fun (header, _) ->
-            String.equal instance_header header)
+        Set.find instances ~f:(fun (header, _) -> String.equal instance_header header)
       with
       | None -> ()
       | Some instance ->
@@ -73,8 +72,8 @@ class instances =
         Mutex.unlock mutex
   end
 
-let clients = new instances
-let services = new instances
+let clients = new t
+let services = new t
 let find_service = services#get_client
 let find_client = clients#get_client
 let remove_client = clients#remove
