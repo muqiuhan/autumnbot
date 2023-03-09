@@ -44,9 +44,10 @@ let event_loop on_message client_sock =
      | Text -> if fin then on_message cout (Text !buf)
      | Binary -> if fin then on_message cout (Binary !buf)
      | Close ->
-       (* TODO: Handling of closing status *)
-       ignore (send Close cout (Bytes.sub payload_data 0 2));
-       raise Exit
+       (* TODO: Handling of closing status
+        ignore (send Close cout (Bytes.sub payload_data 0 2));
+        raise Exit *)
+       ()
      | Ping -> if not (send Pong cout payload_data) then raise Exit
      | Pong -> ());
     if fin then buf := Bytes.empty
