@@ -7,30 +7,35 @@ ws.on("error", console.error);
 ws.on("open", function open() {
   console.log("Successfully connected to AutumnBot.Core");
 
-
   // Mount message
-  ws.send(JSON.stringify({
-    header: "AutumnBot.Client.SayHello",
-    service: "mount",
-    body: ""
-  }));
+  ws.send(
+    JSON.stringify({
+      header: "AutumnBot.Client.SayHello",
+      service: "mount",
+      body: "",
+    })
+  );
 
   // Request service
-  ws.send(JSON.stringify({
-    header: "AutumnBot.Client.SayHello",
-    service: "AutumnBot.Service.SayHello",
-    body: "Hi",
-  }));
-});
-
-ws.on("close", function close(code, reason) {
-  ws.send(JSON.stringify({
-    header: "AutumnBot.Client.SayHello",
-    service: "umount",
-    body: ""
-  }));
+  ws.send(
+    JSON.stringify({
+      header: "AutumnBot.Client.SayHello",
+      service: "AutumnBot.Service.SayHello",
+      body: "Hi",
+    })
+  );
 });
 
 ws.on("message", function message(data) {
   console.log(JSON.parse(data)["body"]);
+
+  ws.send(
+    JSON.stringify({
+      header: "AutumnBot.Client.SayHello",
+      service: "umount",
+      body: "",
+    })
+  );
+
+  ws.close();
 });
