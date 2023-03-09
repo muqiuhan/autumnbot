@@ -1,7 +1,7 @@
-open Ws_ocaml
 open Base
+open Domain_impl
+open Ws_ocaml
 open Utils
-module Domain = Stdlib.Domain
 
 class core =
   object (self)
@@ -22,7 +22,7 @@ class core =
         match message with
         | Websocket.Text message ->
           Message.parse (Bytes.to_string message) client
-          |> Option.iter ~f:Message.message_pool#put
+          |> Option.iter ~f:Message.Pool.message_pool#put
         | Websocket.Binary _ -> ())
       |> ignore
 
@@ -59,4 +59,9 @@ let start () =
     in
     start ())
   |> ignore
+;;
+
+let send (client : Websocket.client) (data : Ocason.Basic.json) : unit =
+  Websocket.send_text client (data |> Ocason.Basic.to_string |> Bytes.of_string)
+  |> check_send_status
 ;;

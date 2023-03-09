@@ -1,6 +1,6 @@
 open Base
+open Domain_impl
 include Simlog
-module Domain = Stdlib.Domain
 
 let _ =
   Domain.spawn (fun () ->

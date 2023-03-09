@@ -16,9 +16,8 @@ let to_string = function
 
 let generate_error_msg (exn : core_exn) : string =
   Ocason.Basic.JsonObject
-    [ "succeed", Ocason.Basic.JsonBool false
-    ; "body", Ocason.Basic.JsonString (to_string exn)
-    ]
+    [ "succeed", Ocason.Basic.JsonBool false;
+      "body", Ocason.Basic.JsonString (to_string exn) ]
   |> Ocason.Basic.to_string
 ;;
 

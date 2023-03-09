@@ -7,6 +7,6 @@ module List = struct
 end
 
 let check_send_status = function
-  | true -> Log.info "Processed successfully"
-  | false -> Log.error "Processing failed"
+  | true -> Log.info "Websocket send successfully"
+  | false -> Log.error "Websocket send failed"
 ;;

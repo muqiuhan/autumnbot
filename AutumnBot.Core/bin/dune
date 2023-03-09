@@ -1,4 +1,4 @@
 (executable
- (public_name core)
+ (name core)
  (modes exe byte)
  (libraries core_lib))

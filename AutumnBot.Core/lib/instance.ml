@@ -13,7 +13,7 @@ module Instance = struct
 
     let sexp_of_t (instance : t) : Sexp.t =
       let (header : string), _ = instance in
-      List [ Atom header ]
+      List [Atom header]
     ;;
   end
 
@@ -21,7 +21,7 @@ module Instance = struct
   include Comparator.Make (T)
 end
 
-class instances =
+class t =
   object (self)
     val mutable instances : (Instance.t, Instance.comparator_witness) Set.t =
       Set.empty (module Instance)
@@ -38,10 +38,10 @@ class instances =
         self#put instance
       | Some (_, client) ->
         let _, instance_client = instance in
-        if phys_equal client instance_client
-        then ()
+        if phys_equal client instance_client then
+          ()
         else (
-          Log.info ("Instance: Replace" ^ instance_header);
+          Log.info ("Instance: Replace " ^ instance_header);
           self#put instance)
 
     method put (instance : Instance.t) : unit =
@@ -72,8 +72,9 @@ class instances =
         Mutex.unlock mutex
   end
 
-let clients = new instances
-let services = new instances
-
+let clients = new t
+let services = new t
 let find_service = services#get_client
 let find_client = clients#get_client
+let remove_client = clients#remove
+let remove_service = services#remove
