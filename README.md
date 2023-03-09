@@ -104,32 +104,37 @@ ws.on("error", console.error);
 ws.on("open", function open() {
   console.log("Successfully connected to AutumnBot.Core");
 
-
   // Mount message
-  ws.send(JSON.stringify({
-    header: "AutumnBot.Client.SayHello",
-    service: "mount",
-    body: ""
-  }));
+  ws.send(
+    JSON.stringify({
+      header: "AutumnBot.Client.SayHello",
+      service: "mount",
+      body: "",
+    })
+  );
 
   // Request service
-  ws.send(JSON.stringify({
-    header: "AutumnBot.Client.SayHello",
-    service: "AutumnBot.Service.SayHello",
-    body: "Hi",
-  }));
-});
-
-ws.on("close", function close(code, reason) {
-  ws.send(JSON.stringify({
-    header: "AutumnBot.Client.SayHello",
-    service: "umount",
-    body: ""
-  }));
+  ws.send(
+    JSON.stringify({
+      header: "AutumnBot.Client.SayHello",
+      service: "AutumnBot.Service.SayHello",
+      body: "Hi",
+    })
+  );
 });
 
 ws.on("message", function message(data) {
   console.log(JSON.parse(data)["body"]);
+
+  ws.send(
+    JSON.stringify({
+      header: "AutumnBot.Client.SayHello",
+      service: "umount",
+      body: "",
+    })
+  );
+
+  ws.close();
 });
 ```
 
@@ -144,33 +149,50 @@ ws.on("error", console.error);
 ws.on("open", function open() {
   console.log("Successfully connected to AutumnBot.Core");
 
-
   // Mount message
-  ws.send(JSON.stringify({
-    header: "AutumnBot.Service.SayHello",
-    client: "",
-    body: "",
-  }));
+  ws.send(
+    JSON.stringify({
+      header: "AutumnBot.Service.SayHello",
+      client: "mount",
+      body: "",
+    })
+  );
 });
 
 ws.on("message", function message(data) {
   let header = JSON.parse(data)["header"];
 
-  console.log("Received message from " + header + " : " + JSON.parse(data)["body"]);
+  console.log(
+    "Received message from " + header + " : " + JSON.parse(data)["body"]
+  );
 
-  if(JSON.parse(data)["body"] == "Hi") {
-    ws.send(JSON.stringify({
-      header: "AutumnBot.Service.SayHello",
-      client: header,
-      body: "Hello!",
-    }));
+  if (JSON.parse(data)["body"] == "Hi") {
+    ws.send(
+      JSON.stringify({
+        header: "AutumnBot.Service.SayHello",
+        client: header,
+        body: "Hello!",
+      })
+    );
   } else {
-    ws.send(JSON.stringify({
-      header: "AutumnBot.Service.SayHello",
-      client: header,
-      body: "ERROR",
-    }));
+    ws.send(
+      JSON.stringify({
+        header: "AutumnBot.Service.SayHello",
+        client: header,
+        body: "ERROR",
+      })
+    );
   }
+
+  ws.send(
+    JSON.stringify({
+      header: "AutumnBot.Service.SayHello",
+      client: "umount",
+      body: "",
+    })
+  );
+
+  ws.close();
 });
 ```
 
