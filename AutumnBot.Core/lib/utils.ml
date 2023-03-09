@@ -9,4 +9,3 @@ end
 let check_send_status = function
   | true -> Log.info "Websocket send successfully"
   | false -> Log.error "Websocket send failed"
-;;
