@@ -45,7 +45,7 @@ ws.on("message", function message(data) {
   ws.send(
     JSON.stringify({
       header: "AutumnBot.Service.SayHello",
-      service: "umount",
+      client: "umount",
       body: "",
     })
   );
