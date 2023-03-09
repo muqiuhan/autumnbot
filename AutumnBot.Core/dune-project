@@ -16,6 +16,7 @@
 (documentation https://github.com/muqiuhan/AutumnBot)
 
 (package
+ (allow_empty)
  (name core)
  (synopsis "AutumnBot.Core")
  (description "AutumnBot.Core")

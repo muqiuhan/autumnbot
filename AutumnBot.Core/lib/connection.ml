@@ -1,7 +1,7 @@
-open Ws_ocaml
 open Base
+open Domain_impl
+open Ws_ocaml
 open Utils
-module Domain = Stdlib.Domain
 
 class core =
   object (self)

@@ -1,6 +1,6 @@
 open Base
+open Domain_impl
 open Ws_ocaml
-module Domain = Stdlib.Domain
 
 module Dispatch =
 functor
