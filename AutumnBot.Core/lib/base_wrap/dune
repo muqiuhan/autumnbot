@@ -1,0 +1,3 @@
+(library
+ (name base_wrap)
+ (libraries base domain_impl))
