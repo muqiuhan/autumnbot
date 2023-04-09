@@ -1,7 +1,6 @@
 #ifndef __AUTUMNBOT_CLIENT_HANDLER_LOG_H__
 #define __AUTUMNBOT_CLIENT_HANDLER_LOG_H__
 
-#include "app.h"
 #include "config.h"
 #include "log.h"
 
