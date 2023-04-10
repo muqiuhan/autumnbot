@@ -60,6 +60,18 @@ let parse : string -> (t, string) result =
     Log.error log_location error_msg ;
     Error error_msg
 
+let build_error_message : string -> string =
+ fun err_msg ->
+  Format.sprintf
+    {|
+      { "header": {
+          "self": "core",
+          "target" : ""
+        },
+        "body" : "%s" }
+    |}
+    err_msg
+
 module Pool = struct
   module Stack = Lockfree.Treiber_stack
 
@@ -80,8 +92,21 @@ end
 
 let message_pool : Pool.t = new Pool.pool
 
-let add : string -> (unit, string) result =
+let push : string -> (unit, string) result =
  fun raw_message ->
   match parse raw_message with
   | Ok message -> Ok (message_pool#push message)
   | Error msg -> Error msg
+
+let pop : unit -> Domain.Dispatcher.instruction option Lwt.t =
+ fun () ->
+  Option.bind (message_pool#pop ()) (function
+    | Client_Message msg ->
+      Some
+        (Domain.Dispatcher.Request
+           {request_service= msg.header.target; request_body= msg.body} )
+    | Service_Message msg ->
+      Some
+        (Domain.Dispatcher.Reply
+           {reply_client= msg.header.target; reply_body= msg.body} ) )
+  |> Lwt.return

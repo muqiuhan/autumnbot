@@ -22,32 +22,59 @@
 
 let log_location : string = "Instance"
 
-class instance_pool =
-  object
-    val pool : (string, Dream.websocket) Hashtbl.t = Hashtbl.create 10
+module Pool : Domain.Instance.Pool = struct
+  class pool =
+    object (self)
+      val pool : (string, Dream.websocket) Hashtbl.t = Hashtbl.create 10
 
-    val log_location : string =
-      Log.combine_location log_location "instance_pool"
+      val log_location : string =
+        Log.combine_location log_location "instance_pool"
 
-    method add : string -> Dream.websocket -> unit =
-      fun name websocket -> Hashtbl.add pool name websocket
+      method add : string -> Dream.websocket -> unit =
+        fun name websocket -> Hashtbl.add pool name websocket
 
-    method remove : string -> unit = fun name -> Hashtbl.remove pool name
+      method remove : string -> unit = fun name -> Hashtbl.remove pool name
 
-    method get : string -> Dream.websocket option =
-      fun name ->
-        try Some (Hashtbl.find pool name)
-        with Not_found ->
-          Log.error log_location
-            (Format.sprintf "Connection not found: %s" name) ;
-          None
+      method remove_with_connection : Dream.websocket -> unit =
+        fun find_connection ->
+          let connection_name = ref String.empty in
+          Hashtbl.iter
+            (fun name connection ->
+              if find_connection = connection then
+                connection_name := name
+              else
+                () )
+            pool ;
+          if String.empty = !connection_name then
+            Log.warn log_location
+              "The target connection was not found and cannot be remove"
+          else
+            self#remove !connection_name
 
-    method broadcast : string -> unit =
-      fun message ->
-        Log.info log_location "Broadcasting message to all connections..." ;
-        Hashtbl.iter
-          (fun name websocket ->
-            Log.info log_location (Format.sprintf "Broadcast to %s" name) ;
-            Dream.send websocket message |> ignore )
-          pool
-  end
+      method get : string -> Dream.websocket option =
+        fun name ->
+          try Some (Hashtbl.find pool name)
+          with Not_found ->
+            Log.error log_location
+              (Format.sprintf "Connection not found: %s" name) ;
+            None
+
+      method broadcast : string -> unit =
+        fun message ->
+          Log.info log_location "Broadcasting message to all connections..." ;
+          Hashtbl.iter
+            (fun name websocket ->
+              Log.info log_location (Format.sprintf "Broadcast to %s" name) ;
+              Dream.send websocket message |> ignore )
+            pool
+    end
+
+  type t = pool
+end
+
+let instances : Pool.t = new Pool.pool
+
+let remove_with_connection : Dream.websocket -> unit =
+  instances#remove_with_connection
+
+let get : string -> Dream.websocket option = instances#get

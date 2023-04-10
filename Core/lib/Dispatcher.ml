@@ -20,25 +20,23 @@
  ** OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  ** SOFTWARE. *)
 
-let log_location : string = "Connection"
+open Domain.Dispatcher
 
-let on_message : Dream.websocket -> string -> unit =
- fun connection raw_message ->
-  match Message.push raw_message with
-  | Ok () -> ()
-  | Error msg ->
-    Dream.send connection (Message.build_error_message msg) |> ignore
+let handle : instruction -> unit = function
+  | Reply {reply_client; reply_body} ->
+    Option.iter
+      (fun client -> Dream.send client reply_body |> ignore)
+      (Instance.get reply_client)
+  | Request {request_service; request_body} ->
+    Option.iter
+      (fun service -> Dream.send service request_body |> ignore)
+      (Instance.get request_service)
 
-let on_close : Dream.websocket -> unit =
- fun connection ->
-  Instance.remove_with_connection connection ;
-  Dream.close_websocket connection |> ignore
-
-let handle : Dream.websocket -> unit Lwt.t =
- fun connection ->
+let dispatch : unit -> unit =
+ fun () ->
   let rec loop () =
-    match%lwt Dream.receive connection with
-    | Some message -> on_message connection message |> loop
-    | None -> on_close connection ; Lwt.return_unit
+    match%lwt Message.pop () with
+    | Some instruction -> handle instruction |> loop
+    | None -> loop ()
   in
-  loop ()
+  loop () |> ignore
