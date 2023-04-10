@@ -1,0 +1,4 @@
+(library
+ (name Core)
+ (preprocess (pps lwt_ppx))
+ (libraries dream lwt third_party))
