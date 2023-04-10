@@ -22,65 +22,20 @@
 
 let log_location : string = "Connection"
 
-class connection_pool =
-  object
-    val pool : (string, Dream.websocket) Hashtbl.t = Hashtbl.create 10
+let on_message : Dream.websocket -> string -> unit =
+ fun connection raw_message ->
+  match Message.add raw_message with
+  | Ok () -> ()
+  | Error msg -> Dream.send connection msg |> ignore
 
-    val log_location : string = Format.sprintf "connection_pool"
+let on_close : Dream.websocket -> unit = fun _ -> ()
 
-    method add_connection : string -> Dream.websocket -> unit =
-      fun name websocket -> Hashtbl.add pool name websocket
-
-    method remove_connection : string -> unit =
-      fun name -> Hashtbl.remove pool name
-
-    method get_connection : string -> Dream.websocket option =
-      fun name ->
-        try Some (Hashtbl.find pool name)
-        with Not_found ->
-          Log.error log_location
-            (Format.sprintf "Connection not found: %s" name) ;
-          None
-
-    method broadcast : string -> unit =
-      fun message ->
-        Log.info log_location "Broadcasting message to all connections..." ;
-        Hashtbl.iter
-          (fun name websocket ->
-            Log.info log_location (Format.sprintf "Broadcast to %s" name) ;
-            Dream.send websocket message |> ignore )
-          pool
-  end
-
-let clients : (int, Dream.websocket) Hashtbl.t = Hashtbl.create 5
-
-let track =
-  let last_client_id = ref 0 in
-  fun websocket ->
-    last_client_id := !last_client_id + 1 ;
-    Hashtbl.replace clients !last_client_id websocket ;
-    !last_client_id
-
-let forget client_id =
-  Dream.log "%d disconnect" client_id ;
-  Hashtbl.remove clients client_id
-
-let send message =
-  Hashtbl.to_seq_values clients
-  |> List.of_seq
-  |> Lwt_list.iter_p (fun client -> Dream.send client message)
-
-let handle_client : Dream.websocket -> unit Lwt.t =
- fun client ->
-  let client_id = track client in
+let handle : Dream.websocket -> unit Lwt.t =
+ fun connection ->
   let rec loop () =
-    match%lwt Dream.receive client with
-    | Some message ->
-      let%lwt () = send message in
-      loop ()
-    | None ->
-      forget client_id ;
-      Dream.close_websocket client
+    match%lwt Dream.receive connection with
+    | Some message -> on_message connection message |> loop
+    | None -> on_close connection ; Lwt.return_unit
   in
   loop ()
 
@@ -88,4 +43,6 @@ let start : interface:string -> port:int -> unit =
  fun ~interface ~port ->
   Dream.run ~interface ~port
   @@ Dream.logger
-  @@ Dream.router [Dream.get "/" (fun _ -> Dream.websocket handle_client)]
+  @@ Dream.router
+       [ Dream.get "/" (fun _ ->
+             Dream.websocket (fun connection -> handle connection) ) ]

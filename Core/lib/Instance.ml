@@ -20,16 +20,34 @@
  ** OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  ** SOFTWARE. *)
 
-module Message = struct
-  type t =
-    | Client_Message of message
-    | Service_Message of message
+let log_location : string = "Instance"
 
-  and message =
-    { header: message_header;
-      body: string }
+class instance_pool =
+  object
+    val pool : (string, Dream.websocket) Hashtbl.t = Hashtbl.create 10
 
-  and message_header =
-    { self: string;
-      target: string }
-end
+    val log_location : string =
+      Log.combine_location log_location "instance_pool"
+
+    method add : string -> Dream.websocket -> unit =
+      fun name websocket -> Hashtbl.add pool name websocket
+
+    method remove : string -> unit = fun name -> Hashtbl.remove pool name
+
+    method get : string -> Dream.websocket option =
+      fun name ->
+        try Some (Hashtbl.find pool name)
+        with Not_found ->
+          Log.error log_location
+            (Format.sprintf "Connection not found: %s" name) ;
+          None
+
+    method broadcast : string -> unit =
+      fun message ->
+        Log.info log_location "Broadcasting message to all connections..." ;
+        Hashtbl.iter
+          (fun name websocket ->
+            Log.info log_location (Format.sprintf "Broadcast to %s" name) ;
+            Dream.send websocket message |> ignore )
+          pool
+  end
