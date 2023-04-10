@@ -26,12 +26,14 @@ module Message = struct
     | Service_Message of message
 
   and message =
-    { header: message_header;
-      body: string }
+    { header : message_header
+    ; body : string
+    }
 
   and message_header =
-    { self: string;
-      target: string }
+    { self : string
+    ; target : string
+    }
 end
 
 module Instance = struct
@@ -39,17 +41,11 @@ module Instance = struct
     class pool :
       object
         val log_location : string
-
         val pool : (string, Dream.websocket) Hashtbl.t
-
         method add : string -> Dream.websocket -> unit
-
         method broadcast : string -> unit
-
         method get : string -> Dream.websocket option
-
         method remove : string -> unit
-
         method remove_with_connection : Dream.websocket -> unit
       end
 
@@ -60,9 +56,13 @@ end
 module Dispatcher = struct
   type instruction =
     | Request of
-        { request_service: string;
-          request_body: string }
+        { request_self : string
+        ; request_service : string
+        ; request_body : string
+        }
     | Reply of
-        { reply_client: string;
-          reply_body: string }
+        { reply_self : string
+        ; reply_client : string
+        ; reply_body : string
+        }
 end

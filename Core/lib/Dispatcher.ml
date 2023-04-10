@@ -23,14 +23,29 @@
 open Domain.Dispatcher
 
 let handle : instruction -> unit = function
-  | Reply {reply_client; reply_body} ->
+  | Reply { reply_self; reply_client; reply_body } ->
     Option.iter
-      (fun client -> Dream.send client reply_body |> ignore)
+      (fun client ->
+        Dream.send
+          client
+          (Format.sprintf
+             {|{ "header" : { "service": "%s" }, body : "%s" } |}
+             reply_self
+             reply_body)
+        |> ignore)
       (Instance.get reply_client)
-  | Request {request_service; request_body} ->
+  | Request { request_self; request_service; request_body } ->
     Option.iter
-      (fun service -> Dream.send service request_body |> ignore)
+      (fun service ->
+        Dream.send
+          service
+          (Format.sprintf
+             {| { "header" : { "client": "%s }, body : "%s" } |}
+             request_self
+             request_body)
+        |> ignore)
       (Instance.get request_service)
+;;
 
 let dispatch : unit -> unit =
  fun () ->
@@ -40,3 +55,4 @@ let dispatch : unit -> unit =
     | None -> loop ()
   in
   loop () |> ignore
+;;

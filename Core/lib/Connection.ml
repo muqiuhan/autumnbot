@@ -26,19 +26,23 @@ let on_message : Dream.websocket -> string -> unit =
  fun connection raw_message ->
   match Message.push raw_message with
   | Ok () -> ()
-  | Error msg ->
-    Dream.send connection (Message.build_error_message msg) |> ignore
+  | Error msg -> Dream.send connection (Message.build_error_message msg) |> ignore
+;;
 
 let on_close : Dream.websocket -> unit =
  fun connection ->
-  Instance.remove_with_connection connection ;
+  Instance.remove_with_connection connection;
   Dream.close_websocket connection |> ignore
+;;
 
 let handle : Dream.websocket -> unit Lwt.t =
  fun connection ->
   let rec loop () =
     match%lwt Dream.receive connection with
     | Some message -> on_message connection message |> loop
-    | None -> on_close connection ; Lwt.return_unit
+    | None ->
+      on_close connection;
+      Lwt.return_unit
   in
   loop ()
+;;

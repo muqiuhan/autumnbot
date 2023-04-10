@@ -28,19 +28,19 @@ let parse_body : Yojson.Basic.t -> string =
  fun json ->
   let open Yojson.Basic.Util in
   match json |> member "header" with
-  | `Null ->
-    raise (Yojson.Json_error "The body field is not included in the message!")
+  | `Null -> raise (Yojson.Json_error "The body field is not included in the message!")
   | `String body -> body
   | _ -> raise (Yojson.Json_error "body format is invalid!")
+;;
 
 let parse_header : Yojson.Basic.t -> message_header =
  fun json ->
   let open Yojson.Basic.Util in
   match json |> member "header" with
-  | `Null ->
-    raise (Yojson.Json_error "The header field is not included in the message!")
-  | `Assoc [("self", `String self); ("target", `String target)] -> {self; target}
+  | `Null -> raise (Yojson.Json_error "The header field is not included in the message!")
+  | `Assoc [ ("self", `String self); ("target", `String target) ] -> { self; target }
   | _ -> raise (Yojson.Json_error "header format is invalid!")
+;;
 
 let parse : string -> (t, string) result =
  fun raw_message ->
@@ -48,17 +48,17 @@ let parse : string -> (t, string) result =
     let json : Yojson.Basic.t = Yojson.Basic.from_string raw_message in
     let header = parse_header json
     and body = parse_body json in
-    if String.starts_with ~prefix:"AutumnBot.Client" header.self then
-      Ok (Client_Message {header; body})
-    else if String.starts_with ~prefix:"AutumnBot.Service" header.self then
-      Ok (Service_Message {header; body})
+    if String.starts_with ~prefix:"AutumnBot.Client" header.self
+    then Ok (Client_Message { header; body })
+    else if String.starts_with ~prefix:"AutumnBot.Service" header.self
+    then Ok (Service_Message { header; body })
     else
-      raise
-        (Yojson.Json_error
-           (Format.sprintf "Unknown message source: %s" header.self) )
-  with Yojson.Json_error error_msg ->
-    Log.error log_location error_msg ;
+      raise (Yojson.Json_error (Format.sprintf "Unknown message source: %s" header.self))
+  with
+  | Yojson.Json_error error_msg ->
+    Log.error log_location error_msg;
     Error error_msg
+;;
 
 let build_error_message : string -> string =
  fun err_msg ->
@@ -71,6 +71,7 @@ let build_error_message : string -> string =
         "body" : "%s" }
     |}
     err_msg
+;;
 
 module Pool = struct
   module Stack = Lockfree.Treiber_stack
@@ -78,12 +79,8 @@ module Pool = struct
   class pool =
     object
       val pool : t Stack.t = Stack.create ()
-
-      val log_location : string =
-        Log.combine_location log_location "message_pool"
-
+      val log_location : string = Log.combine_location log_location "message_pool"
       method push : t -> unit = fun message -> Stack.push pool message
-
       method pop : unit -> t option = fun () -> Stack.pop pool
     end
 
@@ -97,6 +94,7 @@ let push : string -> (unit, string) result =
   match parse raw_message with
   | Ok message -> Ok (message_pool#push message)
   | Error msg -> Error msg
+;;
 
 let pop : unit -> Domain.Dispatcher.instruction option Lwt.t =
  fun () ->
@@ -104,9 +102,16 @@ let pop : unit -> Domain.Dispatcher.instruction option Lwt.t =
     | Client_Message msg ->
       Some
         (Domain.Dispatcher.Request
-           {request_service= msg.header.target; request_body= msg.body} )
+           { request_self = msg.header.self
+           ; request_service = msg.header.target
+           ; request_body = msg.body
+           })
     | Service_Message msg ->
       Some
         (Domain.Dispatcher.Reply
-           {reply_client= msg.header.target; reply_body= msg.body} ) )
+           { reply_self = msg.header.self
+           ; reply_client = msg.header.target
+           ; reply_body = msg.body
+           }))
   |> Lwt.return
+;;

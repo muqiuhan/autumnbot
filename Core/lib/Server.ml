@@ -26,5 +26,6 @@ let start : interface:string -> port:int -> unit =
   @@ Dream.logger
   @@ Dream.router
        [ Dream.get "/" (fun _ ->
-             Dream.websocket (fun connection -> Connection.handle connection) )
+           Dream.websocket (fun connection -> Connection.handle connection))
        ]
+;;
