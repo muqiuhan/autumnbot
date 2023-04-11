@@ -88,6 +88,7 @@ module Pool = struct
    fun v q ->
     Mutex.lock q.mutex;
     let was_empty = Queue.is_empty q.queue in
+    Log.info log_location "add";
     Queue.add v q.queue;
     if was_empty then Condition.broadcast q.nonempty;
     Mutex.unlock q.mutex |> Lwt.return
@@ -101,6 +102,7 @@ module Pool = struct
     done;
     let v = Queue.take q.queue in
     Mutex.unlock q.mutex;
+    Log.info log_location "take";
     Lwt.return v
  ;;
 
@@ -110,7 +112,6 @@ end
 let message_pool : Pool.t = Pool.create ()
 
 let push : string -> (unit, string) result Lwt.t =
-  Log.info log_location "push";
  fun raw_message ->
   match parse raw_message with
   | Ok message -> Lwt.(Pool.add message message_pool >>= Lwt.return_ok)
@@ -119,7 +120,6 @@ let push : string -> (unit, string) result Lwt.t =
 
 let pop : unit -> Domain.Dispatcher.instruction Lwt.t =
  fun () ->
-  Log.info log_location "pop";
   Lwt.(
     Pool.take message_pool
     >>= function

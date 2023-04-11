@@ -20,22 +20,25 @@
  ** OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  ** SOFTWARE. *)
 
+let _ = print_newline ()
+let log = Dream.sub_log "AutumnBot.Core"
+
 let combine_location : string -> string -> string =
  fun upper current -> Format.sprintf "%s::%s" upper current
 ;;
 
 let error : string -> string -> unit =
- fun location msg -> Dream.error (fun log -> log "%s -> %s" location msg)
+ fun location msg -> log.error (fun log -> log "%s -> %s" location msg)
 ;;
 
 let info : string -> string -> unit =
- fun location msg -> Dream.info (fun log -> log "%s -> %s" location msg)
+ fun location msg -> log.info (fun log -> log "%s -> %s" location msg)
 ;;
 
 let warn : string -> string -> unit =
- fun location msg -> Dream.warning (fun log -> log "%s -> %s" location msg)
+ fun location msg -> log.warning (fun log -> log "%s -> %s" location msg)
 ;;
 
 let debug : string -> string -> unit =
- fun location msg -> Dream.debug (fun log -> log "%s -> %s" location msg)
+ fun location msg -> log.debug (fun log -> log "%s -> %s" location msg)
 ;;
