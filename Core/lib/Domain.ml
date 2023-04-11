@@ -44,7 +44,7 @@ module Instance = struct
         val pool : (string, Dream.websocket) Hashtbl.t
         method add : string -> Dream.websocket -> unit Lwt.t
         method broadcast : string -> unit Lwt.t
-        method get : string -> Dream.websocket option Lwt.t
+        method get : string -> (Dream.websocket, string) result Lwt.t
         method remove : string -> unit Lwt.t
         method remove_with_connection : Dream.websocket -> unit Lwt.t
       end

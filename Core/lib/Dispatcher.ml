@@ -24,33 +24,44 @@ open Domain.Dispatcher
 
 let log_location : string = "Dispatcher"
 
+let error : string -> string -> unit Lwt.t =
+ fun msg self ->
+  Lwt.(
+    Instance.get self
+    >>= fun self ->
+    Result.iter
+      (fun self -> Dream.send self (Message.build_error_message msg) |> ignore)
+      self
+    |> Lwt.return)
+;;
+
 let handle : instruction -> unit Lwt.t = function
   | Reply { reply_self; reply_client; reply_body } ->
     Lwt.(
       Instance.get reply_client
       >>= fun client ->
       (match client with
-       | Some client ->
+       | Ok client ->
          Dream.send
            client
            (Format.sprintf
               {|{ "header" : { "service": "%s" }, body : "%s" } |}
               reply_self
               reply_body)
-       | None -> Lwt.return_unit))
+       | Error msg -> error msg reply_self))
   | Request { request_self; request_service; request_body } ->
     Lwt.(
       Instance.get request_service
       >>= fun service ->
       (match service with
-       | Some service ->
+       | Ok service ->
          Dream.send
            service
            (Format.sprintf
               {| { "header" : { "client": "%s }, body : "%s" } |}
               request_self
               request_body)
-       | None -> Lwt.return_unit))
+       | Error msg -> error msg request_self))
 ;;
 
 let dispatch : unit -> unit =

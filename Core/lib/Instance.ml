@@ -53,12 +53,13 @@ module Pool : Domain.Instance.Pool = struct
             |> Lwt.return
           else self#remove !connection_name
 
-      method get : string -> Dream.websocket option Lwt.t =
+      method get : string -> (Dream.websocket, string) result Lwt.t =
         fun name ->
-          try Some (Hashtbl.find pool name) |> Lwt.return with
+          try Ok (Hashtbl.find pool name) |> Lwt.return with
           | Not_found ->
-            Log.error log_location (Format.sprintf "Connection not found: %s" name);
-            Lwt.return_none
+            let err_msg = Format.sprintf "Connection not found: %s" name in
+            Log.error log_location err_msg;
+            Lwt.return (Error err_msg)
 
       method broadcast : string -> unit Lwt.t =
         fun message ->
@@ -80,4 +81,4 @@ let remove_with_connection : Dream.websocket -> unit Lwt.t =
   instances#remove_with_connection
 ;;
 
-let get : string -> Dream.websocket option Lwt.t = instances#get
+let get : string -> (Dream.websocket, string) result Lwt.t = instances#get
