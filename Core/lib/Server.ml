@@ -22,6 +22,7 @@
 
 let start : interface:string -> port:int -> unit =
  fun ~interface ~port ->
+  let _dispatcher = Thread.create (fun () -> Dispatcher.dispatch ()) () in
   Dream.run ~interface ~port
   @@ Dream.logger
   @@ Dream.router

@@ -27,7 +27,7 @@ let log_location : string = "Message"
 let parse_body : Yojson.Basic.t -> string =
  fun json ->
   let open Yojson.Basic.Util in
-  match json |> member "header" with
+  match json |> member "body" with
   | `Null -> raise (Yojson.Json_error "The body field is not included in the message!")
   | `String body -> body
   | _ -> raise (Yojson.Json_error "body format is invalid!")
@@ -74,44 +74,67 @@ let build_error_message : string -> string =
 ;;
 
 module Pool = struct
-  module Stack = Lockfree.Treiber_stack
+  type pool =
+    { queue : t Queue.t
+    ; mutex : Mutex.t
+    ; nonempty : Condition.t
+    }
 
-  class pool =
-    object
-      val pool : t Stack.t = Stack.create ()
-      val log_location : string = Log.combine_location log_location "message_pool"
-      method push : t -> unit = fun message -> Stack.push pool message
-      method pop : unit -> t option = fun () -> Stack.pop pool
-    end
+  let create () =
+    { queue = Queue.create (); mutex = Mutex.create (); nonempty = Condition.create () }
+  ;;
+
+  let add : t -> pool -> unit Lwt.t =
+   fun v q ->
+    Mutex.lock q.mutex;
+    let was_empty = Queue.is_empty q.queue in
+    Queue.add v q.queue;
+    if was_empty then Condition.broadcast q.nonempty;
+    Mutex.unlock q.mutex |> Lwt.return
+ ;;
+
+  let take : pool -> t Lwt.t =
+   fun q ->
+    Mutex.lock q.mutex;
+    while Queue.is_empty q.queue do
+      Condition.wait q.nonempty q.mutex
+    done;
+    let v = Queue.take q.queue in
+    Mutex.unlock q.mutex;
+    Lwt.return v
+ ;;
 
   type t = pool
 end
 
-let message_pool : Pool.t = new Pool.pool
+let message_pool : Pool.t = Pool.create ()
 
-let push : string -> (unit, string) result =
+let push : string -> (unit, string) result Lwt.t =
+  Log.info log_location "push";
  fun raw_message ->
   match parse raw_message with
-  | Ok message -> Ok (message_pool#push message)
-  | Error msg -> Error msg
+  | Ok message -> Lwt.(Pool.add message message_pool >>= Lwt.return_ok)
+  | Error msg -> Error msg |> Lwt.return
 ;;
 
-let pop : unit -> Domain.Dispatcher.instruction option Lwt.t =
+let pop : unit -> Domain.Dispatcher.instruction Lwt.t =
  fun () ->
-  Option.bind (message_pool#pop ()) (function
+  Log.info log_location "pop";
+  Lwt.(
+    Pool.take message_pool
+    >>= function
     | Client_Message msg ->
-      Some
-        (Domain.Dispatcher.Request
-           { request_self = msg.header.self
-           ; request_service = msg.header.target
-           ; request_body = msg.body
-           })
+      Domain.Dispatcher.Request
+        { request_self = msg.header.self
+        ; request_service = msg.header.target
+        ; request_body = msg.body
+        }
+      |> Lwt.return
     | Service_Message msg ->
-      Some
-        (Domain.Dispatcher.Reply
-           { reply_self = msg.header.self
-           ; reply_client = msg.header.target
-           ; reply_body = msg.body
-           }))
-  |> Lwt.return
+      Domain.Dispatcher.Reply
+        { reply_self = msg.header.self
+        ; reply_client = msg.header.target
+        ; reply_body = msg.body
+        }
+      |> Lwt.return)
 ;;

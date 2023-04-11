@@ -22,6 +22,8 @@
 
 open Domain.Dispatcher
 
+let log_location : string = "Dispatcher"
+
 let handle : instruction -> unit Lwt.t = function
   | Reply { reply_self; reply_client; reply_body } ->
     Lwt.(
@@ -51,12 +53,11 @@ let handle : instruction -> unit Lwt.t = function
        | None -> Lwt.return_unit))
 ;;
 
-let dispatch : unit Lwt.t -> unit Lwt.t =
+let dispatch : unit -> unit =
  fun _ ->
+  Log.info log_location "start";
   let rec loop _ =
-    match%lwt Message.pop () with
-    | Some instruction -> handle instruction |> loop
-    | None -> loop Lwt.return_unit
+    Lwt.(Message.pop () >>= fun instruction -> handle instruction |> loop)
   in
-  loop Lwt.return_unit
+  loop Lwt.return_unit |> ignore
 ;;

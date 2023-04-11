@@ -24,9 +24,12 @@ let log_location : string = "Connection"
 
 let on_message : Dream.websocket -> string -> unit Lwt.t =
  fun connection raw_message ->
-  match Message.push raw_message with
-  | Ok () -> Lwt.return_unit
-  | Error msg -> Dream.send connection (Message.build_error_message msg)
+  Lwt.(
+    Message.push raw_message
+    >>= fun raw_message ->
+    match raw_message with
+    | Ok () -> Lwt.return_unit
+    | Error msg -> Dream.send connection (Message.build_error_message msg))
 ;;
 
 let on_close : Dream.websocket -> unit Lwt.t =

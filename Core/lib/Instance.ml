@@ -29,10 +29,14 @@ module Pool : Domain.Instance.Pool = struct
       val log_location : string = Log.combine_location log_location "instance_pool"
 
       method add : string -> Dream.websocket -> unit Lwt.t =
-        fun name websocket -> Hashtbl.add pool name websocket |> Lwt.return
+        fun name websocket ->
+          Log.info log_location (Format.sprintf "add %s" name);
+          Hashtbl.add pool name websocket |> Lwt.return
 
       method remove : string -> unit Lwt.t =
-        fun name -> Hashtbl.remove pool name |> Lwt.return
+        fun name ->
+          Log.info log_location (Format.sprintf "remove %s" name);
+          Hashtbl.remove pool name |> Lwt.return
 
       method remove_with_connection : Dream.websocket -> unit Lwt.t =
         fun find_connection ->
