@@ -28,12 +28,13 @@ module Pool : Domain.Instance.Pool = struct
       val pool : (string, Dream.websocket) Hashtbl.t = Hashtbl.create 10
       val log_location : string = Log.combine_location log_location "instance_pool"
 
-      method add : string -> Dream.websocket -> unit =
-        fun name websocket -> Hashtbl.add pool name websocket
+      method add : string -> Dream.websocket -> unit Lwt.t =
+        fun name websocket -> Hashtbl.add pool name websocket |> Lwt.return
 
-      method remove : string -> unit = fun name -> Hashtbl.remove pool name
+      method remove : string -> unit Lwt.t =
+        fun name -> Hashtbl.remove pool name |> Lwt.return
 
-      method remove_with_connection : Dream.websocket -> unit =
+      method remove_with_connection : Dream.websocket -> unit Lwt.t =
         fun find_connection ->
           let connection_name = ref String.empty in
           Hashtbl.iter
@@ -45,16 +46,17 @@ module Pool : Domain.Instance.Pool = struct
             Log.warn
               log_location
               "The target connection was not found and cannot be remove"
+            |> Lwt.return
           else self#remove !connection_name
 
-      method get : string -> Dream.websocket option =
+      method get : string -> Dream.websocket option Lwt.t =
         fun name ->
-          try Some (Hashtbl.find pool name) with
+          try Some (Hashtbl.find pool name) |> Lwt.return with
           | Not_found ->
             Log.error log_location (Format.sprintf "Connection not found: %s" name);
-            None
+            Lwt.return_none
 
-      method broadcast : string -> unit =
+      method broadcast : string -> unit Lwt.t =
         fun message ->
           Log.info log_location "Broadcasting message to all connections...";
           Hashtbl.iter
@@ -62,11 +64,16 @@ module Pool : Domain.Instance.Pool = struct
               Log.info log_location (Format.sprintf "Broadcast to %s" name);
               Dream.send websocket message |> ignore)
             pool
+          |> Lwt.return
     end
 
   type t = pool
 end
 
 let instances : Pool.t = new Pool.pool
-let remove_with_connection : Dream.websocket -> unit = instances#remove_with_connection
-let get : string -> Dream.websocket option = instances#get
+
+let remove_with_connection : Dream.websocket -> unit Lwt.t =
+  instances#remove_with_connection
+;;
+
+let get : string -> Dream.websocket option Lwt.t = instances#get

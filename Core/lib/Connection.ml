@@ -22,27 +22,24 @@
 
 let log_location : string = "Connection"
 
-let on_message : Dream.websocket -> string -> unit =
+let on_message : Dream.websocket -> string -> unit Lwt.t =
  fun connection raw_message ->
   match Message.push raw_message with
-  | Ok () -> ()
-  | Error msg -> Dream.send connection (Message.build_error_message msg) |> ignore
+  | Ok () -> Lwt.return_unit
+  | Error msg -> Dream.send connection (Message.build_error_message msg)
 ;;
 
-let on_close : Dream.websocket -> unit =
+let on_close : Dream.websocket -> unit Lwt.t =
  fun connection ->
-  Instance.remove_with_connection connection;
-  Dream.close_websocket connection |> ignore
+  Lwt.(Instance.remove_with_connection connection <&> Dream.close_websocket connection)
 ;;
 
 let handle : Dream.websocket -> unit Lwt.t =
  fun connection ->
-  let rec loop () =
+  let rec loop (_ : unit Lwt.t) =
     match%lwt Dream.receive connection with
-    | Some message -> on_message connection message |> loop
-    | None ->
-      on_close connection;
-      Lwt.return_unit
+    | Some message -> Lwt.(on_message connection message <&> loop Lwt.return_unit)
+    | None -> on_close connection
   in
-  loop ()
+  loop Lwt.return_unit
 ;;

@@ -42,11 +42,11 @@ module Instance = struct
       object
         val log_location : string
         val pool : (string, Dream.websocket) Hashtbl.t
-        method add : string -> Dream.websocket -> unit
-        method broadcast : string -> unit
-        method get : string -> Dream.websocket option
-        method remove : string -> unit
-        method remove_with_connection : Dream.websocket -> unit
+        method add : string -> Dream.websocket -> unit Lwt.t
+        method broadcast : string -> unit Lwt.t
+        method get : string -> Dream.websocket option Lwt.t
+        method remove : string -> unit Lwt.t
+        method remove_with_connection : Dream.websocket -> unit Lwt.t
       end
 
     type t = pool

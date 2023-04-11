@@ -22,37 +22,41 @@
 
 open Domain.Dispatcher
 
-let handle : instruction -> unit = function
+let handle : instruction -> unit Lwt.t = function
   | Reply { reply_self; reply_client; reply_body } ->
-    Option.iter
-      (fun client ->
-        Dream.send
-          client
-          (Format.sprintf
-             {|{ "header" : { "service": "%s" }, body : "%s" } |}
-             reply_self
-             reply_body)
-        |> ignore)
-      (Instance.get reply_client)
+    Lwt.(
+      Instance.get reply_client
+      >>= fun client ->
+      (match client with
+       | Some client ->
+         Dream.send
+           client
+           (Format.sprintf
+              {|{ "header" : { "service": "%s" }, body : "%s" } |}
+              reply_self
+              reply_body)
+       | None -> Lwt.return_unit))
   | Request { request_self; request_service; request_body } ->
-    Option.iter
-      (fun service ->
-        Dream.send
-          service
-          (Format.sprintf
-             {| { "header" : { "client": "%s }, body : "%s" } |}
-             request_self
-             request_body)
-        |> ignore)
-      (Instance.get request_service)
+    Lwt.(
+      Instance.get request_service
+      >>= fun service ->
+      (match service with
+       | Some service ->
+         Dream.send
+           service
+           (Format.sprintf
+              {| { "header" : { "client": "%s }, body : "%s" } |}
+              request_self
+              request_body)
+       | None -> Lwt.return_unit))
 ;;
 
-let dispatch : unit -> unit =
- fun () ->
-  let rec loop () =
+let dispatch : unit Lwt.t -> unit Lwt.t =
+ fun _ ->
+  let rec loop _ =
     match%lwt Message.pop () with
     | Some instruction -> handle instruction |> loop
-    | None -> loop ()
+    | None -> loop Lwt.return_unit
   in
-  loop () |> ignore
+  loop Lwt.return_unit
 ;;
