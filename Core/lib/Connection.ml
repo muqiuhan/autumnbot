@@ -25,7 +25,7 @@ let log_location : string = "Connection"
 let on_message : Dream.websocket -> string -> unit Lwt.t =
  fun connection raw_message ->
   Lwt.(
-    Message.push raw_message
+    Message.push connection raw_message
     >>= fun raw_message ->
     match raw_message with
     | Ok () -> Lwt.return_unit

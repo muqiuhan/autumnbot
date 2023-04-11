@@ -42,7 +42,7 @@ let parse_header : Yojson.Basic.t -> message_header =
   | _ -> raise (Yojson.Json_error "header format is invalid!")
 ;;
 
-let parse : string -> (t, string) result =
+let parse : string -> (message, string) result =
  fun raw_message ->
   try
     let json : Yojson.Basic.t = Yojson.Basic.from_string raw_message in
@@ -111,30 +111,32 @@ end
 
 let message_pool : Pool.t = Pool.create ()
 
-let push : string -> (unit, string) result Lwt.t =
- fun raw_message ->
+let push : Dream.websocket -> string -> (unit, string) result Lwt.t =
+ fun connection raw_message ->
   match parse raw_message with
-  | Ok message -> Lwt.(Pool.add message message_pool >>= Lwt.return_ok)
+  | Ok message -> Lwt.(Pool.add (connection, message) message_pool >>= Lwt.return_ok)
   | Error msg -> Error msg |> Lwt.return
 ;;
 
-let pop : unit -> Domain.Dispatcher.instruction Lwt.t =
+let pop : unit -> (Domain.Dispatcher.instruction * Dream.websocket) Lwt.t =
  fun () ->
   Lwt.(
     Pool.take message_pool
-    >>= function
-    | Client_Message msg ->
-      Domain.Dispatcher.Request
-        { request_self = msg.header.self
-        ; request_service = msg.header.target
-        ; request_body = msg.body
-        }
-      |> Lwt.return
-    | Service_Message msg ->
-      Domain.Dispatcher.Reply
-        { reply_self = msg.header.self
-        ; reply_client = msg.header.target
-        ; reply_body = msg.body
-        }
-      |> Lwt.return)
+    >>= fun (connection, msg) ->
+    let instruction =
+      match msg with
+      | Client_Message msg ->
+        Domain.Dispatcher.Request
+          { request_self = msg.header.self
+          ; request_service = msg.header.target
+          ; request_body = msg.body
+          }
+      | Service_Message msg ->
+        Domain.Dispatcher.Reply
+          { reply_self = msg.header.self
+          ; reply_client = msg.header.target
+          ; reply_body = msg.body
+          }
+    in
+    Lwt.return (instruction, connection))
 ;;

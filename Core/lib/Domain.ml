@@ -21,11 +21,11 @@
  ** SOFTWARE. *)
 
 module Message = struct
-  type t =
-    | Client_Message of message
-    | Service_Message of message
+  type message =
+    | Client_Message of message_struct
+    | Service_Message of message_struct
 
-  and message =
+  and message_struct =
     { header : message_header
     ; body : string
     }
@@ -34,6 +34,7 @@ module Message = struct
     { self : string
     ; target : string
     }
+  and t = Dream.websocket * message
 end
 
 module Instance = struct

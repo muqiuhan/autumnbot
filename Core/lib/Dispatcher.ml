@@ -35,7 +35,17 @@ let error : string -> string -> unit Lwt.t =
     |> Lwt.return)
 ;;
 
-let handle : instruction -> unit Lwt.t = function
+let mount_instance : string -> Dream.websocket -> unit Lwt.t =
+ fun name connection -> Instance.mount name connection
+;;
+
+let handle : Domain.Dispatcher.instruction * Dream.websocket -> unit Lwt.t =
+ fun (instruction, connection) ->
+  match instruction with
+  | Reply { reply_self; reply_client = "core"; reply_body = "mount" } ->
+    mount_instance reply_self connection
+  | Request { request_self; request_service = "core"; request_body = "mount" } ->
+    mount_instance request_self connection
   | Reply { reply_self; reply_client; reply_body } ->
     Lwt.(
       Instance.get reply_client

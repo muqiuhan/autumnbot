@@ -27,16 +27,23 @@ module Pool : Domain.Instance.Pool = struct
     object (self)
       val pool : (string, Dream.websocket) Hashtbl.t = Hashtbl.create 10
       val log_location : string = Log.combine_location log_location "instance_pool"
+      val mutex : Mutex.t = Mutex.create ()
 
       method add : string -> Dream.websocket -> unit Lwt.t =
         fun name websocket ->
           Log.info log_location (Format.sprintf "add %s" name);
-          Hashtbl.add pool name websocket |> Lwt.return
+          Mutex.lock mutex;
+          Hashtbl.add pool name websocket;
+          Mutex.unlock mutex;
+          Lwt.return_unit
 
       method remove : string -> unit Lwt.t =
         fun name ->
           Log.info log_location (Format.sprintf "remove %s" name);
-          Hashtbl.remove pool name |> Lwt.return
+          Mutex.lock mutex;
+          Hashtbl.remove pool name;
+          Mutex.unlock mutex;
+          Lwt.return_unit
 
       method remove_with_connection : Dream.websocket -> unit Lwt.t =
         fun find_connection ->
@@ -55,8 +62,14 @@ module Pool : Domain.Instance.Pool = struct
 
       method get : string -> (Dream.websocket, string) result Lwt.t =
         fun name ->
-          try Ok (Hashtbl.find pool name) |> Lwt.return with
+          try
+            Mutex.lock mutex;
+            let result = Ok (Hashtbl.find pool name) |> Lwt.return in
+            Mutex.unlock mutex;
+            result
+          with
           | Not_found ->
+            Mutex.unlock mutex;
             let err_msg = Format.sprintf "Connection not found: %s" name in
             Log.error log_location err_msg;
             Lwt.return (Error err_msg)
@@ -64,12 +77,14 @@ module Pool : Domain.Instance.Pool = struct
       method broadcast : string -> unit Lwt.t =
         fun message ->
           Log.info log_location "Broadcasting message to all connections...";
+          Mutex.lock mutex;
           Hashtbl.iter
             (fun name websocket ->
               Log.info log_location (Format.sprintf "Broadcast to %s" name);
               Dream.send websocket message |> ignore)
-            pool
-          |> Lwt.return
+            pool;
+          Mutex.unlock mutex;
+          Lwt.return_unit
     end
 
   type t = pool
@@ -82,3 +97,4 @@ let remove_with_connection : Dream.websocket -> unit Lwt.t =
 ;;
 
 let get : string -> (Dream.websocket, string) result Lwt.t = instances#get
+let mount : string -> Dream.websocket -> unit Lwt.t = instances#add
