@@ -1,3 +1,0 @@
-(executable
- (name clock)
- (libraries ws_ocaml))

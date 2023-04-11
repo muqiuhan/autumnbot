@@ -1,0 +1,3 @@
+(library
+ (name third_party)
+ (libraries))

@@ -1,0 +1,11 @@
+lib: [
+  "_build/install/default/lib/Core/META"
+  "_build/install/default/lib/Core/dune-package"
+  "_build/install/default/lib/Core/opam"
+]
+bin: [
+  "_build/install/default/bin/Core"
+]
+doc: [
+  "_build/install/default/doc/Core/LICENSE"
+]

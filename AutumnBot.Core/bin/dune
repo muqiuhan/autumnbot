@@ -1,4 +1,0 @@
-(executable
- (name core)
- (modes exe byte)
- (libraries core_lib))
