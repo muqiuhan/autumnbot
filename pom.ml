@@ -30,8 +30,12 @@ let get_action (module M : Module) (action : string) =
   end |> Format.sprintf "cd %s && %s" M.config.path
 
 let _ = 
-  let target = Sys.argv.(1)
-  and action = Sys.argv.(2) in
-  match List.assoc_opt target modules with
-  | Some target -> get_action target action |> Sys.command
-  | _ -> failwith ("Undefined target: " ^ target)
+  match Sys.argv.(1) with
+  | "start" ->  List.iter (fun (target, actions) -> get_action actions "run" |> Sys.command |> ignore) modules
+  | "setup" -> List.iter  (fun (target, actions) -> get_action actions "setup" |> Sys.command |> ignore) modules
+  | "build" -> List.iter  (fun (target, actions) -> get_action actions "build" |> Sys.command |> ignore) modules
+  | target ->
+    let action = Sys.argv.(2) in
+    match List.assoc_opt target modules with
+    | Some target -> get_action target action |> Sys.command |> ignore
+    | _ -> failwith ("Undefined target: " ^ target)
