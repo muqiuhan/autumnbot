@@ -1,0 +1,3 @@
+[submodule "kernel/lib/log"]
+	path = kernel/lib/log
+	url = https://github.com/muqiuhan/dog
