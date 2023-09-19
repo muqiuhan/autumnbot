@@ -1,0 +1,3 @@
+(library
+ (name message)
+ (libraries core dream dog))
