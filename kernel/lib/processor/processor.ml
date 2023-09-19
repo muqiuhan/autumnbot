@@ -1,6 +1,6 @@
 let process (message : Message.Type.t) =
-    Pool.Domain.async (fun () ->
-        let pool = new Pool.Thread.t in
+    Task.Domain.async (fun () ->
+        let pool = new Task.Thread.t in
             match message with
             | Message.Type.Client client_message ->
                 Message_processer.Client.process client_message pool

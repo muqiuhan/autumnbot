@@ -7,7 +7,7 @@ functor
    end)
   ->
   struct
-    let process (message : M.t) (pool : Pool.Thread.t) =
+    let process (message : M.t) (pool : Task.Thread.t) =
         pool#async (fun () -> M.process message)
   end
 
@@ -32,7 +32,7 @@ module Mount = Message_processer (struct
               | Some (address, port) -> Format.sprintf ", at %s:%d" address port
               | None -> ""
           in
-              Log.info "[Kernel]: Mount %s %s %s"
+              Log.info "[Kernel]: Mount %s %s%s"
                 (Message.Mount_message.string_of_client_type
                    mount_message_client_type)
                 mount_message_id mount_message_address
