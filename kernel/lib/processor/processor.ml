@@ -1,9 +1,12 @@
-let process (message : Message.Type.t) : unit =
-    match message with
-    | Message.Type.Client client_message ->
-        Process_client_message.process client_message
-    | Message.Type.Sevice service_message ->
-        Process_service_message.process service_message
-    | Message.Type.Log log_message -> Process_log_message.process log_message
-    | Message.Type.Mount mount_message ->
-        Process_mount_message.process mount_message
+let process (message : Message.Type.t) =
+    Pool.Domain.async (fun () ->
+        let pool = new Pool.Thread.t in
+            match message with
+            | Message.Type.Client client_message ->
+                Message_processer.Client.process client_message pool
+            | Message.Type.Sevice service_message ->
+                Message_processer.Service.process service_message pool
+            | Message.Type.Log log_message ->
+                Message_processer.Log.process log_message pool
+            | Message.Type.Mount mount_message ->
+                Message_processer.Mount.process mount_message pool)
