@@ -1,4 +1,1 @@
-open Kernel
-
-let () = 
-  Log.info "AutumnBot kenerl starting..."
+let () = Log.info "AutumnBot kenerl starting..."

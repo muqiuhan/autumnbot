@@ -1,0 +1,3 @@
+(library
+ (name processor)
+ (libraries message log))
