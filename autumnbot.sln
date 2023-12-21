@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AutumnBot.Program", "AutumnBot.Program\AutumnBot.Program.fsproj", "{1E7D73F1-E236-41F0-9ABF-D4ABE7C1201D}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AutumnBot.Core", "AutumnBot.Core\AutumnBot.Core.fsproj", "{388391A2-02C2-4965-BA89-6C61C59B5173}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AutumnBot.Service", "AutumnBot.Service\AutumnBot.Service.fsproj", "{2695258A-94D0-42A6-B14B-E4E0029A0890}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,9 +16,13 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{1E7D73F1-E236-41F0-9ABF-D4ABE7C1201D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1E7D73F1-E236-41F0-9ABF-D4ABE7C1201D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1E7D73F1-E236-41F0-9ABF-D4ABE7C1201D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1E7D73F1-E236-41F0-9ABF-D4ABE7C1201D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{388391A2-02C2-4965-BA89-6C61C59B5173}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{388391A2-02C2-4965-BA89-6C61C59B5173}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{388391A2-02C2-4965-BA89-6C61C59B5173}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{388391A2-02C2-4965-BA89-6C61C59B5173}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2695258A-94D0-42A6-B14B-E4E0029A0890}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2695258A-94D0-42A6-B14B-E4E0029A0890}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2695258A-94D0-42A6-B14B-E4E0029A0890}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2695258A-94D0-42A6-B14B-E4E0029A0890}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
