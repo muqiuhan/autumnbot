@@ -1,4 +1,0 @@
-(executable
- (public_name kernel)
- (name main)
- (libraries kernel))

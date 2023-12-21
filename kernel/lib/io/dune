@@ -1,4 +1,0 @@
-(library
- (name io)
- (libraries core dream task log)
- (preprocess (pps lwt_ppx)))

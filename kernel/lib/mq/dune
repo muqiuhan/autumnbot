@@ -1,3 +1,0 @@
-(library
- (name mq)
- (libraries core dream log saturn message))

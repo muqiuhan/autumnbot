@@ -1,15 +1,5 @@
-# CLion
-cmake-build-debug/
-.idea/
-
-# OCaml Dune
-_build/
-
-# VSCode
+.fake
 .vscode/
-
-# Xmake
-.xmake/
-
-# NPM
-node_modules
+.idea/
+bin/
+obj/

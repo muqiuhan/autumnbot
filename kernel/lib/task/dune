@@ -1,3 +1,0 @@
-(library
- (name task)
- (libraries core domainslib moonpool))
