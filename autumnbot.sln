@@ -9,7 +9,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AutumnBot.Service", "Autumn
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AutumnBot.Service", "AutumnBot.Service", "{6ED17DF7-7875-4909-B9E1-85D2E0EECC8B}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AutumnBot.Service.QQ", "AutumnBot.Service\AutumnBot.Service.QQ\AutumnBot.Service.QQ.fsproj", "{45460467-FA53-4AF4-ABD1-39D8FADB7439}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AutumnBot.Service.QQGroup", "AutumnBot.Service\AutumnBot.Service.QQGroup\AutumnBot.Service.QQGroup.fsproj", "{45460467-FA53-4AF4-ABD1-39D8FADB7439}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "AutumnBot.Plugin", "AutumnBot.Plugin\AutumnBot.Plugin.fsproj", "{A19D7C7C-0D3B-432F-A700-FB6B3D92D82F}"
 EndProject

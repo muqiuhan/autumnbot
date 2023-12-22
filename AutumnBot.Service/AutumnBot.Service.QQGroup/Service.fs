@@ -1,8 +1,10 @@
-module AutumnBot.Service.QQ
+module AutumnBot.Service.QQGroup.QQGroup
 
 open AutumnBot.Service
 open Mirai.Net
 open System
+open Mirai.Net.Sessions.Http.Managers
+open Mirai.Net.Utils.Scaffolds
 
 type Service () =
   inherit Service.Service ("AutumnBot.Service.QQ")
@@ -41,5 +43,13 @@ type Service () =
       message :?> Data.Messages.Receivers.GroupMessageReceiver
       |> (fun message ->
         this.info
-          $"Received group message from {message.GroupId}: Sender: {message.Sender.Id} -> {message.MessageChain.GetPlainMessage()}"))
+          $"Received group message from {message.GroupId}: Sender: {message.Sender.Id} -> {message.MessageChain.GetPlainMessage()}"
+
+        MessageManager.SendGroupMessageAsync(
+          message.GroupId,
+          MessageChainBuilder().At(message.Sender.Id).Plain("ao~").Build()
+        )
+        |> Async.AwaitTask
+        |> Async.RunSynchronously
+        |> this.debug))
     |> ignore
