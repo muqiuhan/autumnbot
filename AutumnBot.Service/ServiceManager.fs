@@ -1,6 +1,6 @@
 module AutumnBot.Service.ServiceManager
 
-open Log
+open AutumnBot.Plugin.Log
 
 type ServiceManager (services : list<Service.Service>) as self =
   inherit Log ("AutumnBot.Service.ServiceManager")

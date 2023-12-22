@@ -1,4 +1,4 @@
-module AutumnBot.Service.Log
+module AutumnBot.Plugin.Log
 
 open System
 open System.IO

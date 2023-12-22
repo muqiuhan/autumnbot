@@ -1,7 +1,7 @@
 module AutumnBot.Service.Service
 
 open System
-open AutumnBot.Service.Log
+open AutumnBot.Plugin.Log
 
 [<AbstractClass>]
 type Service (serviceName : string) =

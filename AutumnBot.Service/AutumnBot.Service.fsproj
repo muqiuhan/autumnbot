@@ -4,10 +4,12 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Log.fs" />
     <Compile Include="Service.fs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ServiceManager.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AutumnBot.Plugin\AutumnBot.Plugin.fsproj" />
   </ItemGroup>
 </Project>
