@@ -4,10 +4,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Log.fs" />
+    <ProjectReference Include="..\AutumnBot.Service.fsproj" />
     <Compile Include="Service.fs" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ServiceManager.fs" />
+    <PackageReference Include="Mirai.Net" Version="2.5.1" />
   </ItemGroup>
 </Project>

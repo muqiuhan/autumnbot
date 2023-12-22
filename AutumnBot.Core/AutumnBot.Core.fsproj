@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AutumnBot.Service\AutumnBot.Service.fsproj" />
+    <ProjectReference Include="..\AutumnBot.Service\AutumnBot.Service.QQ\AutumnBot.Service.QQ.fsproj" />
   </ItemGroup>
 
 </Project>

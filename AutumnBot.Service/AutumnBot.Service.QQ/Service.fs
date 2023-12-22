@@ -5,9 +5,9 @@ open Mirai.Net
 open System
 
 type Service () =
-  inherit Service.Service ()
+  inherit Service.Service ("AutumnBot.Service.QQ")
 
-  let bot =
+  member this.bot =
     new Sessions.MiraiBot(
       Address = "localhost:9993",
       QQ = "2109939614",
@@ -15,31 +15,31 @@ type Service () =
     )
 
   interface IDisposable with
-    member this.Dispose () = bot.Dispose()
+    member this.Dispose () = this.bot.Dispose()
 
   override this.Start () =
-    printfn $"QQ Service启动中..."
+    this.info "Starting..."
 
-    task { return! bot.LaunchAsync() }
+    task { return! this.bot.LaunchAsync() }
     |> Async.AwaitTask
     |> Async.RunSynchronously
 
+    this.debug "Configuring..."
     this.Config()
 
-    async {
-      while true do
-        if this.Stop.IsCancellationRequested then
-          printfn $"QQ Service停止中..."
-          raise Service.ServiceStop
-    }
+    while true do
+      if this.Stop.IsCancellationRequested then
+        this.info "Aborting..."
+        raise Service.ServiceStop
+
 
   member private this.Config () =
-    bot.MessageReceived
+    this.bot.MessageReceived
     |> Observable.filter (fun event ->
       event :? Data.Messages.Receivers.GroupMessageReceiver)
     |> Observable.subscribe (fun message ->
       message :?> Data.Messages.Receivers.GroupMessageReceiver
       |> (fun message ->
-        printfn
-          $"收到了来自群{message.GroupId}由{message.Sender.Id}发送的消息：{message.MessageChain.GetPlainMessage()}"))
+        this.info
+          $"Received group message from {message.GroupId}: Sender: {message.Sender.Id} -> {message.MessageChain.GetPlainMessage()}"))
     |> ignore
