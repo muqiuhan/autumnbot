@@ -1,0 +1,21 @@
+[
+{
+  "directory": "/home/muqiu/Workspace/autumnbot",
+  "arguments": ["/usr/bin/clang", "-c", "-Qunused-arguments", "-m64", "-fvisibility=hidden", "-fvisibility-inlines-hidden", "-O3", "-std=c++20", "-Isrc", "-I", "/home/muqiu/.xmake/packages/s/spdlog/v1.14.1/469f312ffeff47d9aa249e3ed8e400dc/include", "-I", "/home/muqiu/.xmake/packages/n/nlohmann_json/v3.11.3/ec1183311a224b34b5c138edda96fdde/include", "-stdlib=libc++", "-DNDEBUG", "-o", "build/.objs/autumnbot/linux/x86_64/release/src/main.cpp.o", "src/main.cpp"],
+  "file": "src/main.cpp"
+},
+{
+  "directory": "/home/muqiu/Workspace/autumnbot",
+  "arguments": ["/usr/bin/clang", "-c", "-Qunused-arguments", "-m64", "-fvisibility=hidden", "-fvisibility-inlines-hidden", "-O3", "-std=c++20", "-Isrc", "-I", "/home/muqiu/.xmake/packages/s/spdlog/v1.14.1/469f312ffeff47d9aa249e3ed8e400dc/include", "-I", "/home/muqiu/.xmake/packages/n/nlohmann_json/v3.11.3/ec1183311a224b34b5c138edda96fdde/include", "-stdlib=libc++", "-DNDEBUG", "-o", "build/.objs/autumnbot/linux/x86_64/release/src/plugins/plugins.cpp.o", "src/plugins/plugins.cpp"],
+  "file": "src/plugins/plugins.cpp"
+},
+{
+  "directory": "/home/muqiu/Workspace/autumnbot",
+  "arguments": ["/usr/bin/clang", "-c", "-Qunused-arguments", "-m64", "-fvisibility=hidden", "-fvisibility-inlines-hidden", "-O3", "-std=c++20", "-Isrc", "-I", "/home/muqiu/.xmake/packages/s/spdlog/v1.14.1/469f312ffeff47d9aa249e3ed8e400dc/include", "-I", "/home/muqiu/.xmake/packages/n/nlohmann_json/v3.11.3/ec1183311a224b34b5c138edda96fdde/include", "-stdlib=libc++", "-DNDEBUG", "-o", "build/.objs/autumnbot/linux/x86_64/release/src/plugins/logger/logger.cpp.o", "src/plugins/logger/logger.cpp"],
+  "file": "src/plugins/logger/logger.cpp"
+},
+{
+  "directory": "/home/muqiu/Workspace/autumnbot",
+  "arguments": ["/usr/bin/clang", "-c", "-Qunused-arguments", "-m64", "-fvisibility=hidden", "-fvisibility-inlines-hidden", "-O3", "-std=c++20", "-Isrc", "-I", "/home/muqiu/.xmake/packages/s/spdlog/v1.14.1/469f312ffeff47d9aa249e3ed8e400dc/include", "-I", "/home/muqiu/.xmake/packages/n/nlohmann_json/v3.11.3/ec1183311a224b34b5c138edda96fdde/include", "-stdlib=libc++", "-DNDEBUG", "-o", "build/.objs/autumnbot/linux/x86_64/release/src/errors/errors.cpp.o", "src/errors/errors.cpp"],
+  "file": "src/errors/errors.cpp"
+}]

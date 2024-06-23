@@ -1,5 +1,10 @@
-.fake
+# Xmake cache
+.xmake/
+build/
+
+# MacOS Cache
+.DS_Store
+
 .vscode/
 .idea/
-bin/
-obj/
+.cache/
