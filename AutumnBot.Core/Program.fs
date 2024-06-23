@@ -9,7 +9,7 @@ let log = Log("AutumnBot.Core")
 [<EntryPoint>]
 let main argv =
   log.info "Initializing..."
-  let services = new ServiceManager([ new QQGroup.Service() ])
+  let services = new ServiceManager([  ])
 
   services.Stop()
   System.Console.ReadKey() |> ignore
