@@ -16,6 +16,7 @@ target("autumnbot")
     add_cxxflags("clang::-stdlib=libc++")
     add_packages("spdlog", "nlohmann_json")
     add_ldflags("-lc++")
+    add_links("opencv_core", "opencv_videoio", "opencv_highgui", "opencv_imgproc", "opencv_imgcodecs", "opencv_plot")
 
     after_build(function (target)
         import("core.project.project")

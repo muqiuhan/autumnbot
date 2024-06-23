@@ -35,34 +35,34 @@ namespace autumnbot::plugins
   public:
     explicit PluginManager(const std::vector<Plugin *> &plugins) : Plugins(plugins)
     {
-      log::info("[plugin] <PluginManager>: mount plugins...");
+      logging::info("[plugin] <PluginManager>: mount plugins...");
 
       for (const auto &plugin : Plugins)
         plugin->Mount()
           .map_error([&](const auto &error) {
-          log::error(error.Msg);
+          logging::error(error.Msg);
           return error;
         }).expect("[plugin] <PluginManager>: error.");
 
-      log::info("[plugin] <PluginManager>: done");
+      logging::info("[plugin] <PluginManager>: done");
     }
 
     ~PluginManager()
     {
-      log::info("[plugin] <PluginManager>: umount plugins...");
+      logging::info("[plugin] <PluginManager>: umount plugins...");
 
       for (const auto &plugin : Plugins)
         {
           plugin->Umount()
             .map_error([&](const auto &error) {
-            log::error(error.Msg);
+            logging::error(error.Msg);
             return error;
           }).expect("[plugin] <PluginManager>: error.");
 
           delete plugin;
         }
 
-      log::info("plugin] <PluginManager>: done");
+      logging::info("plugin] <PluginManager>: done");
     }
 
   private:

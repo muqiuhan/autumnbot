@@ -5,7 +5,7 @@ namespace autumnbot::plugins::logger
 {
   auto Logger::Mount() noexcept -> result<void, errors::Error>
   {
-    log::info("[plugin] <Logger>: Mount");
+    logging::info("[plugin] <Logger>: Mount");
     try
       {
         auto console    = spdlog::stdout_color_mt("console");
@@ -21,7 +21,7 @@ namespace autumnbot::plugins::logger
 
   auto Logger::Umount() noexcept -> result<void, errors::Error>
   {
-    log::info("[plugin] <Logger>: Unount");
+    logging::info("[plugin] <Logger>: Unount");
     return {};
   }
 } // namespace autumnbot::plugins::logger

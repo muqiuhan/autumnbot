@@ -12,7 +12,7 @@
 using namespace cpp;
 using json = nlohmann::json;
 
-namespace log
+namespace logging
 {
   using namespace spdlog;
 }
