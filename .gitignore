@@ -1,10 +1,9 @@
-# Xmake cache
-.xmake/
-build/
-
-# MacOS Cache
-.DS_Store
+/autumnbot/dist/
 
 .vscode/
 .idea/
-.cache/
+__pycache__/
+
+poetry.lock
+
+.venv/

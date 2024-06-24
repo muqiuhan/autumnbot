@@ -9,6 +9,8 @@ readme = "README.md"
 python = "^3.11"
 opencv-python = "^4.10.0.84"
 
+pykka = "^4.0.2"
+structlog = "^24.2.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
