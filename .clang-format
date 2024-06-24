@@ -23,11 +23,11 @@ BreakConstructorInitializersBeforeComma:        true
 AllowAllArgumentsOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: true
 ColumnLimit: 120
-LambdaBodyIndentation: OuterScope
+LambdaBodyIndentation: Signature
 RemoveBracesLLVM: true
 SeparateDefinitionBlocks: Always
 CommentPragmas: '^ IWYU pragma:'
-ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth:      2
 ContinuationIndentWidth:        2
 AlignAfterOpenBracket: AlwaysBreak

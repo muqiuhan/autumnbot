@@ -8,8 +8,8 @@ cmake_policy(SET CMP0091 NEW)
 project(autumnbot VERSION 0.0.1 LANGUAGES CXX)
 
 # target
-set(CMAKE_C_COMPILER "/usr/bin/clang")
-set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
+set(CMAKE_C_COMPILER "/usr/bin/gcc")
+set(CMAKE_CXX_COMPILER "/usr/bin/g++")
 add_executable(autumnbot "")
 set_target_properties(autumnbot PROPERTIES OUTPUT_NAME "autumnbot")
 set_target_properties(autumnbot PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/linux/x86_64/release")
@@ -19,13 +19,17 @@ target_include_directories(autumnbot PRIVATE
 target_include_directories(autumnbot SYSTEM PRIVATE
     /home/muqiu/.xmake/packages/s/spdlog/v1.14.1/469f312ffeff47d9aa249e3ed8e400dc/include
     /home/muqiu/.xmake/packages/n/nlohmann_json/v3.11.3/ec1183311a224b34b5c138edda96fdde/include
+    /home/muqiu/.xmake/packages/o/opencv/4.10.0/07fff2ddbc8647d392e888cc2a12d4a4/include/opencv4
+    /home/muqiu/.xmake/packages/f/ffmpeg/7.0/927a7605f9ef47db9de73f45b4a37225/include
+    /home/muqiu/.xmake/packages/l/libdrm/2.4.118/1b3643c7b5084929bfbf9a3bd621b192/include
+    /home/muqiu/.xmake/packages/l/libdrm/2.4.118/1b3643c7b5084929bfbf9a3bd621b192/include/libdrm
 )
 target_compile_options(autumnbot PRIVATE
     $<$<COMPILE_LANGUAGE:C>:-m64>
     $<$<COMPILE_LANGUAGE:CXX>:-m64>
     $<$<COMPILE_LANGUAGE:C>:-DNDEBUG>
     $<$<COMPILE_LANGUAGE:CXX>:-DNDEBUG>
-    $<$<COMPILE_LANGUAGE:CXX>:-stdlib=libc++>
+    $<$<COMPILE_LANGUAGE:CXX>:-static>
 )
 set_target_properties(autumnbot PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_features(autumnbot PRIVATE cxx_std_20)
@@ -43,16 +47,96 @@ if(MSVC)
         MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 target_link_libraries(autumnbot PRIVATE
+    opencv_phase_unwrapping
+    opencv_surface_matching
+    opencv_saliency
+    opencv_wechat_qrcode
+    opencv_mcc
+    opencv_face
+    opencv_img_hash
+    opencv_videostab
+    opencv_structured_light
+    opencv_intensity_transform
+    opencv_ccalib
+    opencv_line_descriptor
+    opencv_stereo
+    opencv_dnn_objdetect
+    opencv_dnn_superres
+    opencv_fuzzy
+    opencv_hfs
+    opencv_rapid
+    opencv_bgsegm
+    opencv_bioinspired
+    opencv_rgbd
+    opencv_dpm
+    opencv_aruco
+    opencv_reg
+    opencv_tracking
+    opencv_datasets
+    opencv_xfeatures2d
+    opencv_shape
+    opencv_superres
+    opencv_plot
+    opencv_quality
+    opencv_text
+    opencv_optflow
+    opencv_ximgproc
+    opencv_xobjdetect
+    opencv_xphoto
+    opencv_stitching
+    opencv_ml
+    opencv_photo
+    opencv_gapi
+    opencv_objdetect
+    opencv_highgui
+    opencv_videoio
+    opencv_video
+    opencv_calib3d
+    opencv_dnn
+    opencv_features2d
+    opencv_flann
+    opencv_imgcodecs
+    opencv_imgproc
+    opencv_core
+    ade
+    zlib
+    libjpeg-turbo
+    libtiff
+    libwebp
+    libpng
+    libprotobuf
+    quirc
+    avfilter
+    avdevice
+    avformat
+    avcodec
+    swscale
+    swresample
+    avutil
+    drm
+    drm_nouveau
+    drm_radeon
+    drm_amdgpu
+    z
     pthread
+    dl
+)
+target_link_directories(autumnbot PRIVATE
+    /home/muqiu/.xmake/packages/o/opencv/4.10.0/07fff2ddbc8647d392e888cc2a12d4a4/lib
+    /home/muqiu/.xmake/packages/o/opencv/4.10.0/07fff2ddbc8647d392e888cc2a12d4a4/lib/opencv4/3rdparty
+    /home/muqiu/.xmake/packages/f/ffmpeg/7.0/927a7605f9ef47db9de73f45b4a37225/lib
+    /home/muqiu/.xmake/packages/l/libdrm/2.4.118/1b3643c7b5084929bfbf9a3bd621b192/lib
 )
 target_link_options(autumnbot PRIVATE
     -m64
-    -lc++
+    -Wl,-Bsymbolic
 )
 target_sources(autumnbot PRIVATE
     src/main.cpp
-    src/plugins/plugins.cpp
-    src/plugins/logger/logger.cpp
     src/errors/errors.cpp
+    src/plugins/logger/logger.cpp
+    src/plugins/plugins.cpp
+    src/services/services.cpp
+    src/services/camera/camera.cpp
 )
 

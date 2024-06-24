@@ -1,5 +1,6 @@
 #include "logger.hpp"
 #include <exception>
+#include <memory>
 
 namespace autumnbot::plugins::logger
 {

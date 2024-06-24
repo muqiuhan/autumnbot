@@ -6,28 +6,28 @@ ifneq ($(VERBOSE),1)
 VV=@
 endif
 
-MXX=/usr/bin/gcc
-RC=/usr/bin/rustc
-AS=/usr/bin/gcc
-MM=/usr/bin/gcc
+RC=/home/muqiu/.cargo/bin/rustc
 CU=/usr/bin/clang
-CC=/usr/bin/gcc
+AS=/usr/bin/gcc
+MXX=/usr/bin/gcc
+MM=/usr/bin/gcc
 CXX=/usr/bin/gcc
+CC=/usr/bin/gcc
 
-LD=/usr/bin/g++
-RCLD=/usr/bin/rustc
-SH=/usr/bin/g++
-RCSH=/usr/bin/rustc
 AR=/usr/bin/ar
-RCAR=/usr/bin/rustc
+RCAR=/home/muqiu/.cargo/bin/rustc
+SH=/usr/bin/g++
+RCSH=/home/muqiu/.cargo/bin/rustc
+LD=/usr/bin/g++
+RCLD=/home/muqiu/.cargo/bin/rustc
 
-autumnbot_LD=/usr/bin/clang++
-autumnbot_CXX=/usr/bin/clang
-autumnbot_CXX=/usr/bin/clang
+autumnbot_LD=/usr/bin/g++
+autumnbot_CXX=/usr/bin/gcc
+autumnbot_CXX=/usr/bin/gcc
 
+autumnbot_CXXFLAGS=-m64 -fvisibility=hidden -fvisibility-inlines-hidden -O3 -std=c++20 -Isrc -isystem /home/muqiu/.xmake/packages/s/spdlog/v1.14.1/469f312ffeff47d9aa249e3ed8e400dc/include -isystem /home/muqiu/.xmake/packages/n/nlohmann_json/v3.11.3/ec1183311a224b34b5c138edda96fdde/include -isystem /home/muqiu/.xmake/packages/o/opencv/4.10.0/07fff2ddbc8647d392e888cc2a12d4a4/include/opencv4 -isystem /home/muqiu/.xmake/packages/f/ffmpeg/7.0/927a7605f9ef47db9de73f45b4a37225/include -isystem /home/muqiu/.xmake/packages/l/libdrm/2.4.118/1b3643c7b5084929bfbf9a3bd621b192/include -isystem /home/muqiu/.xmake/packages/l/libdrm/2.4.118/1b3643c7b5084929bfbf9a3bd621b192/include/libdrm -static -DNDEBUG
 autumnbot_CXXFLAGS=
-autumnbot_CXXFLAGS=-Qunused-arguments -m64 -fvisibility=hidden -fvisibility-inlines-hidden -O3 -std=c++20 -Isrc -isystem /home/muqiu/.xmake/packages/s/spdlog/v1.14.1/469f312ffeff47d9aa249e3ed8e400dc/include -isystem /home/muqiu/.xmake/packages/n/nlohmann_json/v3.11.3/ec1183311a224b34b5c138edda96fdde/include -stdlib=libc++ -DNDEBUG
-autumnbot_LDFLAGS=-m64 -s -lpthread -lc++
+autumnbot_LDFLAGS=-m64 -L/home/muqiu/.xmake/packages/o/opencv/4.10.0/07fff2ddbc8647d392e888cc2a12d4a4/lib -L/home/muqiu/.xmake/packages/o/opencv/4.10.0/07fff2ddbc8647d392e888cc2a12d4a4/lib/opencv4/3rdparty -L/home/muqiu/.xmake/packages/f/ffmpeg/7.0/927a7605f9ef47db9de73f45b4a37225/lib -L/home/muqiu/.xmake/packages/l/libdrm/2.4.118/1b3643c7b5084929bfbf9a3bd621b192/lib -s -lopencv_phase_unwrapping -lopencv_surface_matching -lopencv_saliency -lopencv_wechat_qrcode -lopencv_mcc -lopencv_face -lopencv_img_hash -lopencv_videostab -lopencv_structured_light -lopencv_intensity_transform -lopencv_ccalib -lopencv_line_descriptor -lopencv_stereo -lopencv_dnn_objdetect -lopencv_dnn_superres -lopencv_fuzzy -lopencv_hfs -lopencv_rapid -lopencv_bgsegm -lopencv_bioinspired -lopencv_rgbd -lopencv_dpm -lopencv_aruco -lopencv_reg -lopencv_tracking -lopencv_datasets -lopencv_xfeatures2d -lopencv_shape -lopencv_superres -lopencv_plot -lopencv_quality -lopencv_text -lopencv_optflow -lopencv_ximgproc -lopencv_xobjdetect -lopencv_xphoto -lopencv_stitching -lopencv_ml -lopencv_photo -lopencv_gapi -lopencv_objdetect -lopencv_highgui -lopencv_videoio -lopencv_video -lopencv_calib3d -lopencv_dnn -lopencv_features2d -lopencv_flann -lopencv_imgcodecs -lopencv_imgproc -lopencv_core -lade -lzlib -llibjpeg-turbo -llibtiff -llibwebp -llibpng -llibprotobuf -lquirc -lavfilter -lavdevice -lavformat -lavcodec -lswscale -lswresample -lavutil -ldrm -ldrm_nouveau -ldrm_radeon -ldrm_amdgpu -lz -lpthread -ldl -Wl,-Bsymbolic
 
 default:  autumnbot
 
@@ -36,30 +36,40 @@ all:  autumnbot
 .PHONY: default all  autumnbot
 
 autumnbot: build/linux/x86_64/release/autumnbot
-build/linux/x86_64/release/autumnbot: build/.objs/autumnbot/linux/x86_64/release/src/main.cpp.o build/.objs/autumnbot/linux/x86_64/release/src/plugins/plugins.cpp.o build/.objs/autumnbot/linux/x86_64/release/src/plugins/logger/logger.cpp.o build/.objs/autumnbot/linux/x86_64/release/src/errors/errors.cpp.o
+build/linux/x86_64/release/autumnbot: build/.objs/autumnbot/linux/x86_64/release/src/main.cpp.o build/.objs/autumnbot/linux/x86_64/release/src/errors/errors.cpp.o build/.objs/autumnbot/linux/x86_64/release/src/plugins/logger/logger.cpp.o build/.objs/autumnbot/linux/x86_64/release/src/plugins/plugins.cpp.o build/.objs/autumnbot/linux/x86_64/release/src/services/services.cpp.o build/.objs/autumnbot/linux/x86_64/release/src/services/camera/camera.cpp.o
 	@echo linking.release autumnbot
 	@mkdir -p build/linux/x86_64/release
-	$(VV)$(autumnbot_LD) -o build/linux/x86_64/release/autumnbot build/.objs/autumnbot/linux/x86_64/release/src/main.cpp.o build/.objs/autumnbot/linux/x86_64/release/src/plugins/plugins.cpp.o build/.objs/autumnbot/linux/x86_64/release/src/plugins/logger/logger.cpp.o build/.objs/autumnbot/linux/x86_64/release/src/errors/errors.cpp.o $(autumnbot_LDFLAGS)
+	$(VV)$(autumnbot_LD) -o build/linux/x86_64/release/autumnbot build/.objs/autumnbot/linux/x86_64/release/src/main.cpp.o build/.objs/autumnbot/linux/x86_64/release/src/errors/errors.cpp.o build/.objs/autumnbot/linux/x86_64/release/src/plugins/logger/logger.cpp.o build/.objs/autumnbot/linux/x86_64/release/src/plugins/plugins.cpp.o build/.objs/autumnbot/linux/x86_64/release/src/services/services.cpp.o build/.objs/autumnbot/linux/x86_64/release/src/services/camera/camera.cpp.o $(autumnbot_LDFLAGS)
 
 build/.objs/autumnbot/linux/x86_64/release/src/main.cpp.o: src/main.cpp
 	@echo compiling.release src/main.cpp
 	@mkdir -p build/.objs/autumnbot/linux/x86_64/release/src
 	$(VV)$(autumnbot_CXX) -c $(autumnbot_CXXFLAGS) -o build/.objs/autumnbot/linux/x86_64/release/src/main.cpp.o src/main.cpp
 
-build/.objs/autumnbot/linux/x86_64/release/src/plugins/plugins.cpp.o: src/plugins/plugins.cpp
-	@echo compiling.release src/plugins/plugins.cpp
-	@mkdir -p build/.objs/autumnbot/linux/x86_64/release/src/plugins
-	$(VV)$(autumnbot_CXX) -c $(autumnbot_CXXFLAGS) -o build/.objs/autumnbot/linux/x86_64/release/src/plugins/plugins.cpp.o src/plugins/plugins.cpp
+build/.objs/autumnbot/linux/x86_64/release/src/errors/errors.cpp.o: src/errors/errors.cpp
+	@echo compiling.release src/errors/errors.cpp
+	@mkdir -p build/.objs/autumnbot/linux/x86_64/release/src/errors
+	$(VV)$(autumnbot_CXX) -c $(autumnbot_CXXFLAGS) -o build/.objs/autumnbot/linux/x86_64/release/src/errors/errors.cpp.o src/errors/errors.cpp
 
 build/.objs/autumnbot/linux/x86_64/release/src/plugins/logger/logger.cpp.o: src/plugins/logger/logger.cpp
 	@echo compiling.release src/plugins/logger/logger.cpp
 	@mkdir -p build/.objs/autumnbot/linux/x86_64/release/src/plugins/logger
 	$(VV)$(autumnbot_CXX) -c $(autumnbot_CXXFLAGS) -o build/.objs/autumnbot/linux/x86_64/release/src/plugins/logger/logger.cpp.o src/plugins/logger/logger.cpp
 
-build/.objs/autumnbot/linux/x86_64/release/src/errors/errors.cpp.o: src/errors/errors.cpp
-	@echo compiling.release src/errors/errors.cpp
-	@mkdir -p build/.objs/autumnbot/linux/x86_64/release/src/errors
-	$(VV)$(autumnbot_CXX) -c $(autumnbot_CXXFLAGS) -o build/.objs/autumnbot/linux/x86_64/release/src/errors/errors.cpp.o src/errors/errors.cpp
+build/.objs/autumnbot/linux/x86_64/release/src/plugins/plugins.cpp.o: src/plugins/plugins.cpp
+	@echo compiling.release src/plugins/plugins.cpp
+	@mkdir -p build/.objs/autumnbot/linux/x86_64/release/src/plugins
+	$(VV)$(autumnbot_CXX) -c $(autumnbot_CXXFLAGS) -o build/.objs/autumnbot/linux/x86_64/release/src/plugins/plugins.cpp.o src/plugins/plugins.cpp
+
+build/.objs/autumnbot/linux/x86_64/release/src/services/services.cpp.o: src/services/services.cpp
+	@echo compiling.release src/services/services.cpp
+	@mkdir -p build/.objs/autumnbot/linux/x86_64/release/src/services
+	$(VV)$(autumnbot_CXX) -c $(autumnbot_CXXFLAGS) -o build/.objs/autumnbot/linux/x86_64/release/src/services/services.cpp.o src/services/services.cpp
+
+build/.objs/autumnbot/linux/x86_64/release/src/services/camera/camera.cpp.o: src/services/camera/camera.cpp
+	@echo compiling.release src/services/camera/camera.cpp
+	@mkdir -p build/.objs/autumnbot/linux/x86_64/release/src/services/camera
+	$(VV)$(autumnbot_CXX) -c $(autumnbot_CXXFLAGS) -o build/.objs/autumnbot/linux/x86_64/release/src/services/camera/camera.cpp.o src/services/camera/camera.cpp
 
 clean:  clean_autumnbot
 
@@ -67,7 +77,9 @@ clean_autumnbot:
 	@rm -rf build/linux/x86_64/release/autumnbot
 	@rm -rf build/linux/x86_64/release/autumnbot.sym
 	@rm -rf build/.objs/autumnbot/linux/x86_64/release/src/main.cpp.o
-	@rm -rf build/.objs/autumnbot/linux/x86_64/release/src/plugins/plugins.cpp.o
-	@rm -rf build/.objs/autumnbot/linux/x86_64/release/src/plugins/logger/logger.cpp.o
 	@rm -rf build/.objs/autumnbot/linux/x86_64/release/src/errors/errors.cpp.o
+	@rm -rf build/.objs/autumnbot/linux/x86_64/release/src/plugins/logger/logger.cpp.o
+	@rm -rf build/.objs/autumnbot/linux/x86_64/release/src/plugins/plugins.cpp.o
+	@rm -rf build/.objs/autumnbot/linux/x86_64/release/src/services/services.cpp.o
+	@rm -rf build/.objs/autumnbot/linux/x86_64/release/src/services/camera/camera.cpp.o
 

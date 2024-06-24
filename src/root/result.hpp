@@ -121,8 +121,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       }
 
       template <typename T>
-      inline RESULT_INLINE_VISIBILITY constexpr auto forward(typename std::remove_reference<T>::type&& t) noexcept
-        -> T&&
+      inline RESULT_INLINE_VISIBILITY constexpr auto forward(typename std::remove_reference<T>::type&& t) noexcept -> T&&
       {
         return static_cast<T&&>(t);
       }
@@ -996,8 +995,7 @@ namespace RESULT_NAMESPACE_INTERNAL
           std::is_nothrow_copy_constructible<T>::value && std::is_nothrow_copy_constructible<E>::value);
         result_trivial_copy_ctor_base_impl(result_trivial_copy_ctor_base_impl&& other) = default;
 
-        auto operator=(const result_trivial_copy_ctor_base_impl& other)
-          -> result_trivial_copy_ctor_base_impl&                                                          = default;
+        auto operator=(const result_trivial_copy_ctor_base_impl& other) -> result_trivial_copy_ctor_base_impl& = default;
         auto operator=(result_trivial_copy_ctor_base_impl&& other) -> result_trivial_copy_ctor_base_impl& = default;
       };
 
@@ -1022,8 +1020,7 @@ namespace RESULT_NAMESPACE_INTERNAL
         result_trivial_move_ctor_base_impl(result_trivial_move_ctor_base_impl&& other) noexcept(
           std::is_nothrow_move_constructible<T>::value && std::is_nothrow_move_constructible<E>::value);
 
-        auto operator=(const result_trivial_move_ctor_base_impl& other)
-          -> result_trivial_move_ctor_base_impl&                                                          = default;
+        auto operator=(const result_trivial_move_ctor_base_impl& other) -> result_trivial_move_ctor_base_impl& = default;
         auto operator=(result_trivial_move_ctor_base_impl&& other) -> result_trivial_move_ctor_base_impl& = default;
       };
 
@@ -1047,8 +1044,8 @@ namespace RESULT_NAMESPACE_INTERNAL
 
         auto operator=(const result_trivial_copy_assign_base_impl& other) noexcept(
           std::is_nothrow_copy_constructible<T>::value && std::is_nothrow_copy_constructible<E>::value
-          && std::is_nothrow_copy_assignable<T>::value && std::is_nothrow_copy_assignable<E>::value)
-          -> result_trivial_copy_assign_base_impl&;
+          && std::is_nothrow_copy_assignable<T>::value
+          && std::is_nothrow_copy_assignable<E>::value) -> result_trivial_copy_assign_base_impl&;
         auto operator=(result_trivial_copy_assign_base_impl&& other) -> result_trivial_copy_assign_base_impl& = default;
       };
 
@@ -1072,12 +1069,12 @@ namespace RESULT_NAMESPACE_INTERNAL
         result_trivial_move_assign_base_impl(const result_trivial_move_assign_base_impl& other) = default;
         result_trivial_move_assign_base_impl(result_trivial_move_assign_base_impl&& other)      = default;
 
-        auto operator=(const result_trivial_move_assign_base_impl& other)
-          -> result_trivial_move_assign_base_impl& = default;
+        auto operator=(const result_trivial_move_assign_base_impl& other) -> result_trivial_move_assign_base_impl& =
+                                                                               default;
         auto operator=(result_trivial_move_assign_base_impl&& other) noexcept(
           std::is_nothrow_move_constructible<T>::value && std::is_nothrow_move_constructible<E>::value
-          && std::is_nothrow_move_assignable<T>::value && std::is_nothrow_move_assignable<E>::value)
-          -> result_trivial_move_assign_base_impl&;
+          && std::is_nothrow_move_assignable<T>::value
+          && std::is_nothrow_move_assignable<E>::value) -> result_trivial_move_assign_base_impl&;
       };
 
       template <typename T, typename E>
@@ -2761,8 +2758,7 @@ namespace RESULT_NAMESPACE_INTERNAL
         typename E2,
         typename = typename std::enable_if<
           std::is_nothrow_constructible<E, const E2&>::value && std::is_assignable<E&, const E2&>::value>::type>
-      auto operator=(const result<void, E2>& other) noexcept(std::is_nothrow_assignable<E, const E2&>::value)
-        -> result&;
+      auto operator=(const result<void, E2>& other) noexcept(std::is_nothrow_assignable<E, const E2&>::value) -> result&;
 
       /// \brief Move-converts the state of \p other
       ///
@@ -3189,20 +3185,23 @@ namespace std
 template <typename E>
 template <typename E2, typename>
 inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::bad_result_access<E>::bad_result_access(E2&& error)
-  : logic_error{"error attempting to access value from result containing error"}, m_error(detail::forward<E2>(error))
+  : logic_error{"error attempting to access value from result containing error"}
+  , m_error(detail::forward<E2>(error))
 {}
 
 template <typename E>
 template <typename E2, typename>
 inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::bad_result_access<E>::bad_result_access(const char* what_arg, E2&& error)
-  : logic_error{what_arg}, m_error(detail::forward<E2>(error))
+  : logic_error{what_arg}
+  , m_error(detail::forward<E2>(error))
 {}
 
 template <typename E>
 template <typename E2, typename>
 inline RESULT_INLINE_VISIBILITY
   RESULT_NS_IMPL::bad_result_access<E>::bad_result_access(const std::string& what_arg, E2&& error)
-  : logic_error{what_arg}, m_error(detail::forward<E2>(error))
+  : logic_error{what_arg}
+  , m_error(detail::forward<E2>(error))
 {}
 
 //-----------------------------------------------------------------------------
@@ -3477,14 +3476,16 @@ template <typename T, typename E, bool IsTrivial>
 template <typename... Args>
 inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::detail::result_union<T, E, IsTrivial>::result_union(
   in_place_t, Args&&... args) noexcept(std::is_nothrow_constructible<T, Args...>::value)
-  : m_value(detail::forward<Args>(args)...), m_has_value{true}
+  : m_value(detail::forward<Args>(args)...)
+  , m_has_value{true}
 {}
 
 template <typename T, typename E, bool IsTrivial>
 template <typename... Args>
 inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::detail::result_union<T, E, IsTrivial>::result_union(
   in_place_error_t, Args&&... args) noexcept(std::is_nothrow_constructible<E, Args...>::value)
-  : m_error(detail::forward<Args>(args)...), m_has_value{false}
+  : m_error(detail::forward<Args>(args)...)
+  , m_has_value{false}
 {}
 
 //-----------------------------------------------------------------------------
@@ -3517,14 +3518,16 @@ template <typename T, typename E>
 template <typename... Args>
 inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::detail::result_union<T, E, false>::result_union(
   in_place_t, Args&&... args) noexcept(std::is_nothrow_constructible<T, Args...>::value)
-  : m_value(detail::forward<Args>(args)...), m_has_value{true}
+  : m_value(detail::forward<Args>(args)...)
+  , m_has_value{true}
 {}
 
 template <typename T, typename E>
 template <typename... Args>
 inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::detail::result_union<T, E, false>::result_union(
   in_place_error_t, Args&&... args) noexcept(std::is_nothrow_constructible<E, Args...>::value)
-  : m_error(detail::forward<Args>(args)...), m_has_value{false}
+  : m_error(detail::forward<Args>(args)...)
+  , m_has_value{false}
 {}
 
 //-----------------------------------------------------------------------------
@@ -3761,8 +3764,8 @@ template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_trivial_copy_assign_base_impl<T, E>::
   operator=(const result_trivial_copy_assign_base_impl& other) noexcept(
     std::is_nothrow_copy_constructible<T>::value && std::is_nothrow_copy_constructible<E>::value
-    && std::is_nothrow_copy_assignable<T>::value && std::is_nothrow_copy_assignable<E>::value)
-    -> result_trivial_copy_assign_base_impl&
+    && std::is_nothrow_copy_assignable<T>::value
+    && std::is_nothrow_copy_assignable<E>::value) -> result_trivial_copy_assign_base_impl&
 {
   using ctor_base = result_construct_base<T, E>;
 
@@ -3778,8 +3781,8 @@ template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_trivial_move_assign_base_impl<T, E>::
   operator=(result_trivial_move_assign_base_impl&& other) noexcept(
     std::is_nothrow_move_constructible<T>::value && std::is_nothrow_move_constructible<E>::value
-    && std::is_nothrow_move_assignable<T>::value && std::is_nothrow_move_assignable<E>::value)
-    -> result_trivial_move_assign_base_impl&
+    && std::is_nothrow_move_assignable<T>::value
+    && std::is_nothrow_move_assignable<E>::value) -> result_trivial_move_assign_base_impl&
 {
   using ctor_base = result_construct_base<T, E>;
 
@@ -4349,9 +4352,10 @@ inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
 {
   using result_type = result<T, detail::invoke_result_t<Fn, E&&>>;
 
-  return has_error() ? result_type(
-           in_place_error, detail::invoke(detail::forward<Fn>(fn), static_cast<E&&>(m_storage.storage.m_error)))
-                     : result_type(static_cast<T&&>(m_storage.storage.m_value));
+  return has_error()
+           ? result_type(
+               in_place_error, detail::invoke(detail::forward<Fn>(fn), static_cast<E&&>(m_storage.storage.m_error)))
+           : result_type(static_cast<T&&>(m_storage.storage.m_value));
 }
 
 template <typename T, typename E>
@@ -4441,7 +4445,8 @@ inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
 //-----------------------------------------------------------------------------
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<void, E>::result() noexcept : m_storage(in_place)
+inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<void, E>::result() noexcept
+  : m_storage(in_place)
 {}
 
 template <typename E>
@@ -4709,7 +4714,7 @@ inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
   return has_value()
            ? result_type{}
            : result_type(
-             in_place_error, detail::invoke(detail::forward<Fn>(fn), static_cast<E&&>(m_storage.storage.m_error)));
+               in_place_error, detail::invoke(detail::forward<Fn>(fn), static_cast<E&&>(m_storage.storage.m_error)));
 }
 
 template <typename E>

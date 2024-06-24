@@ -3,7 +3,6 @@
 
 #include "root/root.hpp"
 #include "errors/errors.hpp"
-#include <memory>
 
 namespace autumnbot::plugins
 {
@@ -12,7 +11,9 @@ namespace autumnbot::plugins
   class Error : public errors::Error
   {
   public:
-    explicit Error(std::string msg) : errors::Error(std::format("[plugin] {}", msg)) {}
+    explicit Error(std::string msg)
+      : errors::Error(std::format("[plugin] {}", msg))
+    {}
   };
 
   /** Plugin is an abstraction of various built-in plugins in autumnbot,
@@ -27,13 +28,21 @@ namespace autumnbot::plugins
     virtual auto Umount() noexcept -> result<void, errors::Error> = 0;
 
     virtual ~Plugin() = default;
+
+    explicit Plugin(std::string pluginName)
+      : PluginName(std::move(pluginName))
+    {}
+
+  protected:
+    const std::string PluginName;
   };
 
   /** PluginManager is used to unify the mount and umount plugins. */
   class PluginManager
   {
   public:
-    explicit PluginManager(const std::vector<Plugin *> &plugins) : Plugins(plugins)
+    explicit PluginManager(const std::vector<Plugin *> &plugins)
+      : Plugins(plugins)
     {
       logging::info("[plugin] <PluginManager>: mount plugins...");
 
@@ -62,7 +71,7 @@ namespace autumnbot::plugins
           delete plugin;
         }
 
-      logging::info("plugin] <PluginManager>: done");
+      logging::info("[plugin] <PluginManager>: done");
     }
 
   private:
