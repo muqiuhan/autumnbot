@@ -4,21 +4,16 @@
 #include "cpr/cprtypes.h"
 #include "services/services.hpp"
 
-namespace autumnbot::services::ollama
-{
-  namespace api
-  {
+namespace autumnbot::services::ollama {
+  namespace api {
     inline static const std::string API  = "http://localhost:11434";
     inline static const std::string CHAT = std::format("{}/api/chat", API);
   }; // namespace api
 
-  namespace request
-  {
-    class Chat
-    {
+  namespace request {
+    class Chat {
     public:
-      class Message
-      {
+      class Message {
       public:
         const std::string Role = "user";
         const std::string Content;
@@ -29,17 +24,19 @@ namespace autumnbot::services::ollama
       const std::string            Model  = "qwen";
       mutable std::vector<Message> Messages;
 
+    private:
+      [[nodiscard]] auto ConstructMessagesRequestBody() const noexcept -> result<std::string, errors::Error>;
+      [[nodiscard]] auto ConstructRequestBody() const noexcept -> result<std::string, errors::Error>;
+
     public:
       [[nodiscard]] auto Request(std::string msg) const noexcept -> result<std::string, errors::Error>;
     };
   }; // namespace request
 
-  class Ollama : public Service
-  {
+  class Ollama : public Service {
   public:
     Ollama()
-      : Service("Ollama")
-    {
+      : Service("Ollama") {
       Log.Info("initialize");
 
       if (cpr::Get(cpr::Url{api::API}).text != "Ollama is running")

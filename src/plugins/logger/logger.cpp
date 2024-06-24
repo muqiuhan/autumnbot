@@ -1,11 +1,10 @@
 #include "logger.hpp"
+
 #include <exception>
 #include <memory>
 
-namespace autumnbot::plugins::logger
-{
-  auto Logger::Mount() noexcept -> result<void, errors::Error>
-  {
+namespace autumnbot::plugins::logger {
+  auto Logger::Mount() noexcept -> result<void, errors::Error> {
     logging::info("[plugin] <Logger>: Mount");
     try
       {
@@ -14,14 +13,11 @@ namespace autumnbot::plugins::logger
 
         return {};
       }
-    catch (const std::exception & exn)
-      {
-        return fail(Error(exn.what()));
-      }
+    catch (const std::exception &exn)
+      { return fail(Error(exn.what())); }
   }
 
-  auto Logger::Umount() noexcept -> result<void, errors::Error>
-  {
+  auto Logger::Umount() noexcept -> result<void, errors::Error> {
     logging::info("[plugin] <Logger>: Unount");
     return {};
   }

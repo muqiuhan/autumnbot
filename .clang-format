@@ -3,18 +3,18 @@ BasedOnStyle:   LLVM
 BinPackArguments:       false
 BinPackParameters:      false
 BraceWrapping:
-  AfterClass:   true
-  AfterEnum:    true
-  AfterFunction:        true
-  AfterNamespace:       true
-  AfterStruct:  true
-  AfterUnion: true
+  AfterClass:   false
+  AfterEnum:    false
+  AfterFunction:        false
+  AfterNamespace:       false
+  AfterStruct:  false
+  AfterUnion: false
   BeforeCatch:  true
   BeforeElse:   true
   AfterControlStatement:        true
-  SplitEmptyFunction: false
-  SplitEmptyRecord: false
-  SplitEmptyNamespace: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
   IndentBraces: true
 BreakBeforeBinaryOperators:     NonAssignment
 BreakBeforeBraces:      Custom

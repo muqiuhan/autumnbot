@@ -1,18 +1,16 @@
 #ifndef AUTUMNBOT_SERVICES_CAMERA_HPP
 #define AUTUMNBOT_SERVICES_CAMERA_HPP
 
-#include "opencv2/videoio.hpp"
-#include "services/services.hpp"
 #include <cstdlib>
 
-namespace autumnbot::services::camera
-{
-  class Camera : private Service
-  {
+#include "opencv2/videoio.hpp"
+#include "services/services.hpp"
+
+namespace autumnbot::services::camera {
+  class Camera : private Service {
   public:
     Camera()
-      : Service("Camera")
-    {
+      : Service("Camera") {
       Log.Info("initialize");
     }
 
@@ -22,8 +20,8 @@ namespace autumnbot::services::camera
     auto Start() noexcept -> result<void, errors::Error> override;
 
   private:
-    cv::VideoCapture                Camera0;
-    std::jthread                    CameraSaverThread;
+    cv::VideoCapture Camera0;
+    std::jthread     CameraSaverThread;
 
   private:
     auto CameraSaver() noexcept -> result<void, errors::Error>;

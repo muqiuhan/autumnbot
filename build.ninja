@@ -15,7 +15,7 @@ rule cxx
  depfile = $out.d
  description = compiling.debug $in
 
-rule as
+rule mxx
  command = /usr/bin/gcc $ARGS -MMD -MF $out.d -o $out -c $in
  deps = gcc
  depfile = $out.d
@@ -33,13 +33,13 @@ rule cc
  depfile = $out.d
  description = compiling.debug $in
 
-rule mm
+rule as
  command = /usr/bin/gcc $ARGS -MMD -MF $out.d -o $out -c $in
  deps = gcc
  depfile = $out.d
  description = compiling.debug $in
 
-rule mxx
+rule mm
  command = /usr/bin/gcc $ARGS -MMD -MF $out.d -o $out -c $in
  deps = gcc
  depfile = $out.d
@@ -47,6 +47,10 @@ rule mxx
 
 
 # rules for linker
+rule ar
+ command = /usr/bin/ar $ARGS $out $in
+ description = archiving.debug $out
+
 rule sh
  command = /usr/bin/g++ -o $out $in $ARGS
  description = linking.debug $out
@@ -54,10 +58,6 @@ rule sh
 rule ld
  command = /usr/bin/g++ -o $out $in $ARGS
  description = linking.debug $out
-
-rule ar
- command = /usr/bin/ar $ARGS $out $in
- description = archiving.debug $out
 
 
 # build targets

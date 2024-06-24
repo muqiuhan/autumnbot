@@ -5,23 +5,18 @@
 #include "root/root.hpp"
 #include "spdlog/spdlog.h"
 
-namespace autumnbot::plugins::logger
-{
-  class Error : public plugins::Error
-  {
+namespace autumnbot::plugins::logger {
+  class Error : public plugins::Error {
   public:
     explicit Error(std::string msg)
-      : plugins::Error(std::format("[plugin] <Logger> {}", msg))
-    {}
+      : plugins::Error(std::format("[plugin] <Logger> {}", msg)) {}
   };
 
-  class Logger : private plugins::Plugin
-  {
+  class Logger : private plugins::Plugin {
   public:
     explicit Logger(std::string moduleName, std::string pluginName)
       : ModuleName(std::move(moduleName))
-      , plugins::Plugin(std::move(pluginName))
-    {}
+      , plugins::Plugin(std::move(pluginName)) {}
 
     auto Mount() noexcept -> result<void, errors::Error> override;
     auto Umount() noexcept -> result<void, errors::Error> override;

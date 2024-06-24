@@ -33,13 +33,13 @@
 #define RESULT_RESULT_HPP
 
 #include <cstddef>          // std::size_t
-#include <type_traits>      // std::enable_if, std::is_constructible, etc
-#include <new>              // placement-new
-#include <memory>           // std::address_of
 #include <functional>       // std::reference_wrapper, std::invoke
-#include <utility>          // std::in_place_t, std::forward
 #include <initializer_list> // std::initializer_list
+#include <memory>           // std::address_of
+#include <new>              // placement-new
 #include <string>           // std::string (for exception message)
+#include <type_traits>      // std::enable_if, std::is_constructible, etc
+#include <utility>          // std::in_place_t, std::forward
 
 #if defined(RESULT_EXCEPTIONS_DISABLED)
 #include <cstdio> // std::fprintf, stderr
@@ -69,8 +69,8 @@
 #define RESULT_INLINE_VISIBILITY
 #endif
 
-// [[clang::warn_unused_result]] is more full-featured than gcc's variant, since
-// it supports being applied to class objects.
+// [[clang::warn_unused_result]] is more full-featured than gcc's variant,
+// since it supports being applied to class objects.
 #if __cplusplus >= 201703L
 #define RESULT_NODISCARD   [[nodiscard]]
 #define RESULT_WARN_UNUSED [[nodiscard]]
@@ -99,31 +99,28 @@
 #pragma clang diagnostic ignored "-Wdocumentation-unknown-command"
 #endif
 
-namespace RESULT_NAMESPACE_INTERNAL
-{
-  inline namespace bitwizeshift
-  {
+namespace RESULT_NAMESPACE_INTERNAL {
+  inline namespace bitwizeshift {
 
     //===========================================================================
     // utilities : constexpr forward
     //===========================================================================
 
     // std::forward is not constexpr until C++14
-    namespace detail
-    {
+    namespace detail {
 #if __cplusplus >= 201402L
       using std::forward;
 #else
       template <typename T>
-      inline RESULT_INLINE_VISIBILITY constexpr auto forward(typename std::remove_reference<T>::type& t) noexcept -> T&&
-      {
-        return static_cast<T&&>(t);
+      inline RESULT_INLINE_VISIBILITY constexpr auto forward(typename std::remove_reference<T>::type &t) noexcept
+        -> T && {
+        return static_cast<T &&>(t);
       }
 
       template <typename T>
-      inline RESULT_INLINE_VISIBILITY constexpr auto forward(typename std::remove_reference<T>::type&& t) noexcept -> T&&
-      {
-        return static_cast<T&&>(t);
+      inline RESULT_INLINE_VISIBILITY constexpr auto forward(typename std::remove_reference<T>::type &&t) noexcept
+        -> T && {
+        return static_cast<T &&>(t);
       }
 #endif
     } // namespace detail
@@ -134,18 +131,15 @@ namespace RESULT_NAMESPACE_INTERNAL
 
     // std::invoke was introduced in C++17
 
-    namespace detail
-    {
+    namespace detail {
 #if __cplusplus >= 201703L
       using std::invoke;
       using std::invoke_result;
       using std::invoke_result_t;
 #else
-      template <typename T> struct is_reference_wrapper : std::false_type
-      {};
+      template <typename T> struct is_reference_wrapper : std::false_type {};
 
-      template <typename U> struct is_reference_wrapper<std::reference_wrapper<U>> : std::true_type
-      {};
+      template <typename U> struct is_reference_wrapper<std::reference_wrapper<U>> : std::true_type {};
 
       //-------------------------------------------------------------------------
 
@@ -157,11 +151,10 @@ namespace RESULT_NAMESPACE_INTERNAL
         typename = typename std::enable_if<
           std::is_function<T>::value && std::is_base_of<Base, typename std::decay<Derived>::type>::value>::type>
       inline RESULT_INLINE_VISIBILITY constexpr auto
-        invoke(T Base::*pmf, Derived&& ref, Args&&... args) noexcept(noexcept(
+        invoke(T Base::*pmf, Derived &&ref, Args &&...args) noexcept(noexcept(
           (::RESULT_NS_IMPL::detail::forward<Derived>(ref).*pmf)(::RESULT_NS_IMPL::detail::forward<Args>(args)...)))
           -> decltype((::RESULT_NS_IMPL::detail::forward<Derived>(ref).*pmf)(
-            ::RESULT_NS_IMPL::detail::forward<Args>(args)...))
-      {
+            ::RESULT_NS_IMPL::detail::forward<Args>(args)...)) {
         return (RESULT_NS_IMPL::detail::forward<Derived>(ref).*pmf)(RESULT_NS_IMPL::detail::forward<Args>(args)...);
       }
 
@@ -172,10 +165,9 @@ namespace RESULT_NAMESPACE_INTERNAL
         typename... Args,
         typename = typename std::enable_if<
           std::is_function<T>::value && is_reference_wrapper<typename std::decay<RefWrap>::type>::value>::type>
-      inline RESULT_INLINE_VISIBILITY constexpr auto invoke(T Base::*pmf, RefWrap&& ref, Args&&... args) noexcept(
+      inline RESULT_INLINE_VISIBILITY constexpr auto invoke(T Base::*pmf, RefWrap &&ref, Args &&...args) noexcept(
         noexcept((ref.get().*pmf)(std::forward<Args>(args)...)))
-        -> decltype((ref.get().*pmf)(RESULT_NS_IMPL::detail::forward<Args>(args)...))
-      {
+        -> decltype((ref.get().*pmf)(RESULT_NS_IMPL::detail::forward<Args>(args)...)) {
         return (ref.get().*pmf)(RESULT_NS_IMPL::detail::forward<Args>(args)...);
       }
 
@@ -187,11 +179,10 @@ namespace RESULT_NAMESPACE_INTERNAL
         typename = typename std::enable_if<
           std::is_function<T>::value && !is_reference_wrapper<typename std::decay<Pointer>::type>::value
           && !std::is_base_of<Base, typename std::decay<Pointer>::type>::value>::type>
-      inline RESULT_INLINE_VISIBILITY constexpr auto invoke(T Base::*pmf, Pointer&& ptr, Args&&... args) noexcept(
+      inline RESULT_INLINE_VISIBILITY constexpr auto invoke(T Base::*pmf, Pointer &&ptr, Args &&...args) noexcept(
         noexcept(((*std::forward<Pointer>(ptr)).*pmf)(std::forward<Args>(args)...)))
         -> decltype(((*RESULT_NS_IMPL::detail::forward<Pointer>(ptr)).*pmf)(
-          RESULT_NS_IMPL::detail::forward<Args>(args)...))
-      {
+          RESULT_NS_IMPL::detail::forward<Args>(args)...)) {
         return ((*RESULT_NS_IMPL::detail::forward<Pointer>(ptr)).*pmf)(RESULT_NS_IMPL::detail::forward<Args>(args)...);
       }
 
@@ -201,9 +192,8 @@ namespace RESULT_NAMESPACE_INTERNAL
         typename Derived,
         typename = typename std::enable_if<
           !std::is_function<T>::value && std::is_base_of<Base, typename std::decay<Derived>::type>::value>::type>
-      inline RESULT_INLINE_VISIBILITY constexpr auto invoke(T Base::*pmd, Derived&& ref) noexcept(
-        noexcept(std::forward<Derived>(ref).*pmd)) -> decltype(RESULT_NS_IMPL::detail::forward<Derived>(ref).*pmd)
-      {
+      inline RESULT_INLINE_VISIBILITY constexpr auto invoke(T Base::*pmd, Derived &&ref) noexcept(
+        noexcept(std::forward<Derived>(ref).*pmd)) -> decltype(RESULT_NS_IMPL::detail::forward<Derived>(ref).*pmd) {
         return RESULT_NS_IMPL::detail::forward<Derived>(ref).*pmd;
       }
 
@@ -214,8 +204,7 @@ namespace RESULT_NAMESPACE_INTERNAL
         typename = typename std::enable_if<
           !std::is_function<T>::value && is_reference_wrapper<typename std::decay<RefWrap>::type>::value>::type>
       inline RESULT_INLINE_VISIBILITY constexpr auto
-        invoke(T Base::*pmd, RefWrap&& ref) noexcept(noexcept(ref.get().*pmd)) -> decltype(ref.get().*pmd)
-      {
+        invoke(T Base::*pmd, RefWrap &&ref) noexcept(noexcept(ref.get().*pmd)) -> decltype(ref.get().*pmd) {
         return ref.get().*pmd;
       }
 
@@ -226,9 +215,8 @@ namespace RESULT_NAMESPACE_INTERNAL
         typename = typename std::enable_if<
           !std::is_function<T>::value && !is_reference_wrapper<typename std::decay<Pointer>::type>::value
           && !std::is_base_of<Base, typename std::decay<Pointer>::type>::value>::type>
-      inline RESULT_INLINE_VISIBILITY constexpr auto invoke(T Base::*pmd, Pointer&& ptr) noexcept(
-        noexcept((*std::forward<Pointer>(ptr)).*pmd)) -> decltype((*RESULT_NS_IMPL::detail::forward<Pointer>(ptr)).*pmd)
-      {
+      inline RESULT_INLINE_VISIBILITY constexpr auto invoke(T Base::*pmd, Pointer &&ptr) noexcept(noexcept(
+        (*std::forward<Pointer>(ptr)).*pmd)) -> decltype((*RESULT_NS_IMPL::detail::forward<Pointer>(ptr)).*pmd) {
         return (*RESULT_NS_IMPL::detail::forward<Pointer>(ptr)).*pmd;
       }
 
@@ -237,16 +225,14 @@ namespace RESULT_NAMESPACE_INTERNAL
         typename... Args,
         typename = typename std::enable_if<!std::is_member_pointer<typename std::decay<F>::type>::value>::type>
       inline RESULT_INLINE_VISIBILITY constexpr auto
-        invoke(F&& f, Args&&... args) noexcept(noexcept(std::forward<F>(f)(std::forward<Args>(args)...)))
-          -> decltype(RESULT_NS_IMPL::detail::forward<F>(f)(RESULT_NS_IMPL::detail::forward<Args>(args)...))
-      {
+        invoke(F &&f, Args &&...args) noexcept(noexcept(std::forward<F>(f)(std::forward<Args>(args)...)))
+          -> decltype(RESULT_NS_IMPL::detail::forward<F>(f)(RESULT_NS_IMPL::detail::forward<Args>(args)...)) {
         return RESULT_NS_IMPL::detail::forward<F>(f)(RESULT_NS_IMPL::detail::forward<Args>(args)...);
       }
 
-      template <typename Fn, typename... Args> struct is_invocable
-      {
+      template <typename Fn, typename... Args> struct is_invocable {
         template <typename Fn2, typename... Args2>
-        static auto test(Fn2&&, Args2&&...)
+        static auto test(Fn2 &&, Args2 &&...)
           -> decltype(invoke(std::declval<Fn2>(), std::declval<Args2>()...), std::true_type{});
 
         static auto test(...) -> std::false_type;
@@ -255,17 +241,14 @@ namespace RESULT_NAMESPACE_INTERNAL
         static constexpr bool value = type::value;
       };
 
-      template <bool B, typename Fn, typename... Args> struct invoke_result_impl
-      {
+      template <bool B, typename Fn, typename... Args> struct invoke_result_impl {
         using type = decltype(RESULT_NS_IMPL::detail::invoke(std::declval<Fn>(), std::declval<Args>()...));
       };
 
-      template <typename Fn, typename... Args> struct invoke_result_impl<false, Fn, Args...>
-      {};
+      template <typename Fn, typename... Args> struct invoke_result_impl<false, Fn, Args...> {};
 
       template <typename Fn, typename... Args>
-      struct invoke_result : invoke_result_impl<is_invocable<Fn, Args...>::value, Fn, Args...>
-      {};
+      struct invoke_result : invoke_result_impl<is_invocable<Fn, Args...>::value, Fn, Args...> {};
 
       template <typename Fn, typename... Args> using invoke_result_t = typename invoke_result<Fn, Args...>::type;
 #endif
@@ -280,8 +263,7 @@ namespace RESULT_NAMESPACE_INTERNAL
     using std::in_place_t;
 #else
     /// \brief A structure for representing in-place construction
-    struct in_place_t
-    {
+    struct in_place_t {
       explicit in_place_t() = default;
     };
 
@@ -292,9 +274,9 @@ namespace RESULT_NAMESPACE_INTERNAL
     // struct : in_place_t
     //===========================================================================
 
-    /// \brief A structure for representing in-place construction of an error type
-    struct in_place_error_t
-    {
+    /// \brief A structure for representing in-place construction of an error
+    /// type
+    struct in_place_error_t {
       explicit in_place_error_t() = default;
     };
 
@@ -314,24 +296,19 @@ namespace RESULT_NAMESPACE_INTERNAL
     // traits
     //===========================================================================
 
-    template <typename T> struct is_failure : std::false_type
-    {};
+    template <typename T> struct is_failure : std::false_type {};
 
-    template <typename E> struct is_failure<failure<E>> : std::true_type
-    {};
+    template <typename E> struct is_failure<failure<E>> : std::true_type {};
 
-    template <typename T> struct is_result : std::false_type
-    {};
+    template <typename T> struct is_result : std::false_type {};
 
-    template <typename T, typename E> struct is_result<result<T, E>> : std::true_type
-    {};
+    template <typename T, typename E> struct is_result<result<T, E>> : std::true_type {};
 
     //===========================================================================
     // trait : detail::wrapped_result_type
     //===========================================================================
 
-    namespace detail
-    {
+    namespace detail {
 
       template <typename T>
       using wrapped_result_type = typename std::conditional<
@@ -351,8 +328,7 @@ namespace RESULT_NAMESPACE_INTERNAL
     /// \brief An exception thrown when result::value is accessed without
     ///        a contained value
     /////////////////////////////////////////////////////////////////////////////
-    template <typename E> class bad_result_access : public std::logic_error
-    {
+    template <typename E> class bad_result_access : public std::logic_error {
       //-------------------------------------------------------------------------
       // Constructor / Assignment
       //-------------------------------------------------------------------------
@@ -362,7 +338,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///
       /// \param error the underlying error
       template <typename E2, typename = typename std::enable_if<std::is_constructible<E, E2>::value>::type>
-      explicit bad_result_access(E2&& error);
+      explicit bad_result_access(E2 &&error);
 
       /// \{
       /// \brief Constructs this exception using the underlying error type for
@@ -371,27 +347,27 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// \param what_arg the message for the failure
       /// \param error the underlying error
       template <typename E2, typename = typename std::enable_if<std::is_constructible<E, E2>::value>::type>
-      bad_result_access(const char* what_arg, E2&& error);
+      bad_result_access(const char *what_arg, E2 &&error);
       template <typename E2, typename = typename std::enable_if<std::is_constructible<E, E2>::value>::type>
-      bad_result_access(const std::string& what_arg, E2&& error);
+      bad_result_access(const std::string &what_arg, E2 &&error);
       /// \}
 
-      bad_result_access(const bad_result_access& other) = default;
-      bad_result_access(bad_result_access&& other)      = default;
+      bad_result_access(const bad_result_access &other) = default;
+      bad_result_access(bad_result_access &&other)      = default;
 
       //-------------------------------------------------------------------------
 
-      auto operator=(const bad_result_access& other) -> bad_result_access& = default;
-      auto operator=(bad_result_access&& other) -> bad_result_access&      = default;
+      auto operator=(const bad_result_access &other) -> bad_result_access & = default;
+      auto operator=(bad_result_access &&other) -> bad_result_access      & = default;
 
       /// \{
       /// \brief Gets the underlying error
       ///
       /// \return the error
-      auto error() & noexcept -> E&;
-      auto error() && noexcept -> E&&;
-      auto error() const& noexcept -> const E&;
-      auto error() const&& noexcept -> const E&&;
+      auto error() & noexcept -> E &;
+      auto error() && noexcept -> E &&;
+      auto error() const & noexcept -> const E &;
+      auto error() const && noexcept -> const E &&;
       /// \}
 
       //-------------------------------------------------------------------------
@@ -403,13 +379,12 @@ namespace RESULT_NAMESPACE_INTERNAL
 
 #endif
 
-    namespace detail
-    {
+    namespace detail {
 
       template <typename E, typename E2>
       using failure_is_value_convertible = std::integral_constant<
         bool,
-        (std::is_constructible<E, E2&&>::value && !std::is_same<typename std::decay<E2>::type, in_place_t>::value
+        (std::is_constructible<E, E2 &&>::value && !std::is_same<typename std::decay<E2>::type, in_place_t>::value
          && !is_failure<typename std::decay<E2>::type>::value && !is_result<typename std::decay<E2>::type>::value)>;
 
       template <typename E, typename E2>
@@ -424,7 +399,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       using failure_is_value_assignable = std::integral_constant<
         bool,
         (!is_result<typename std::decay<E2>::type>::value && !is_failure<typename std::decay<E2>::type>::value
-         && std::is_assignable<wrapped_result_type<E>&, E2>::value)>;
+         && std::is_assignable<wrapped_result_type<E> &, E2>::value)>;
 
     } // namespace detail
 
@@ -438,8 +413,7 @@ namespace RESULT_NAMESPACE_INTERNAL
     ///
     /// \tparam E the error type
     //////////////////////////////////////////////////////////////////////////////
-    template <typename E> class failure
-    {
+    template <typename E> class failure {
       static_assert(
         !is_result<typename std::decay<E>::type>::value, "A (possibly CV-qualified) result 'E' type is ill-formed.");
       static_assert(
@@ -469,7 +443,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///
       /// \param args the arguments to forward to E's constructor
       template <typename... Args, typename = typename std::enable_if<std::is_constructible<E, Args...>::value>::type>
-      constexpr failure(in_place_t, Args&&... args) noexcept(std::is_nothrow_constructible<E, Args...>::value);
+      constexpr failure(in_place_t, Args &&...args) noexcept(std::is_nothrow_constructible<E, Args...>::value);
 
       /// \brief Constructs a failure by delegating construction to the
       ///        underlying constructor
@@ -480,7 +454,7 @@ namespace RESULT_NAMESPACE_INTERNAL
         typename U,
         typename... Args,
         typename = typename std::enable_if<std::is_constructible<E, std::initializer_list<U>, Args...>::value>::type>
-      constexpr failure(in_place_t, std::initializer_list<U> ilist, Args&&... args) noexcept(
+      constexpr failure(in_place_t, std::initializer_list<U> ilist, Args &&...args) noexcept(
         std::is_nothrow_constructible<E, std::initializer_list<U>, Args...>::value);
 
       /// \{
@@ -490,37 +464,37 @@ namespace RESULT_NAMESPACE_INTERNAL
       template <
         typename E2,
         typename std::enable_if<detail::failure_is_implicit_value_convertible<E, E2>::value, int>::type = 0>
-      constexpr failure(E2&& error) noexcept(std::is_nothrow_constructible<E, E2>::value);
+      constexpr failure(E2 &&error) noexcept(std::is_nothrow_constructible<E, E2>::value);
       template <
         typename E2,
         typename std::enable_if<detail::failure_is_explicit_value_convertible<E, E2>::value, int>::type = 0>
-      constexpr explicit failure(E2&& error) noexcept(std::is_nothrow_constructible<E, E2>::value);
+      constexpr explicit failure(E2 &&error) noexcept(std::is_nothrow_constructible<E, E2>::value);
       /// \}
 
       /// \brief Constructs this failure by copying the contents of an existing
       ///        one
       ///
       /// \param other the other failure to copy
-      /* implicit */ failure(const failure& other) = default;
+      /* implicit */ failure(const failure &other) = default;
 
       /// \brief Constructs this failure by moving the contents of an existing
       ///        one
       ///
       /// \param other the other failure to move
-      /* implicit */ failure(failure&& other) = default;
+      /* implicit */ failure(failure &&other) = default;
 
       /// \brief Constructs this failure by copy-converting \p other
       ///
       /// \param other the other failure to copy
-      template <typename E2, typename = typename std::enable_if<std::is_constructible<E, const E2&>::value>::type>
-      constexpr /* implicit */ failure(const failure<E2>& other) noexcept(
-        std::is_nothrow_constructible<E, const E2&>::value);
+      template <typename E2, typename = typename std::enable_if<std::is_constructible<E, const E2 &>::value>::type>
+      constexpr /* implicit */ failure(const failure<E2> &other) noexcept(
+        std::is_nothrow_constructible<E, const E2 &>::value);
 
       /// \brief Constructs this failure by move-converting \p other
       ///
       /// \param other the other failure to copy
-      template <typename E2, typename = typename std::enable_if<std::is_constructible<E, E2&&>::value>::type>
-      constexpr /* implicit */ failure(failure<E2>&& other) noexcept(std::is_nothrow_constructible<E, E2&&>::value);
+      template <typename E2, typename = typename std::enable_if<std::is_constructible<E, E2 &&>::value>::type>
+      constexpr /* implicit */ failure(failure<E2> &&other) noexcept(std::is_nothrow_constructible<E, E2 &&>::value);
 
       //--------------------------------------------------------------------------
 
@@ -530,36 +504,36 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// \param error the value to assign
       /// \return reference to `(*this)`
       template <typename E2, typename = typename std::enable_if<detail::failure_is_value_assignable<E, E2>::value>::type>
-      RESULT_CPP14_CONSTEXPR auto operator=(E2&& error) noexcept(
-        std::is_nothrow_assignable<E, E2>::value || std::is_lvalue_reference<E>::value) -> failure&;
+      RESULT_CPP14_CONSTEXPR auto operator=(E2 &&error) noexcept(
+        std::is_nothrow_assignable<E, E2>::value || std::is_lvalue_reference<E>::value) -> failure &;
 
       /// \brief Assigns the contents of \p other to this by copy-assignment
       ///
       /// \param other the other failure to copy
       /// \return reference to `(*this)`
-      auto operator=(const failure& other) -> failure& = default;
+      auto operator=(const failure &other) -> failure & = default;
 
       /// \brief Assigns the contents of \p other to this by move-assignment
       ///
       /// \param other the other failure to move
       /// \return reference to `(*this)`
-      auto operator=(failure&& other) -> failure& = default;
+      auto operator=(failure &&other) -> failure & = default;
 
       /// \brief Assigns the contents of \p other to this by copy conversion
       ///
       /// \param other the other failure to copy-convert
       /// \return reference to `(*this)`
-      template <typename E2, typename = typename std::enable_if<std::is_assignable<E&, const E2&>::value>::type>
+      template <typename E2, typename = typename std::enable_if<std::is_assignable<E &, const E2 &>::value>::type>
       RESULT_CPP14_CONSTEXPR auto
-        operator=(const failure<E2>& other) noexcept(std::is_nothrow_assignable<E, const E2&>::value) -> failure&;
+        operator=(const failure<E2> &other) noexcept(std::is_nothrow_assignable<E, const E2 &>::value) -> failure &;
 
       /// \brief Assigns the contents of \p other to this by move conversion
       ///
       /// \param other the other failure to move-convert
       /// \return reference to `(*this)`
-      template <typename E2, typename = typename std::enable_if<std::is_assignable<E&, E2&&>::value>::type>
-      RESULT_CPP14_CONSTEXPR auto operator=(failure<E2>&& other) noexcept(std::is_nothrow_assignable<E, E2&&>::value)
-        -> failure&;
+      template <typename E2, typename = typename std::enable_if<std::is_assignable<E &, E2 &&>::value>::type>
+      RESULT_CPP14_CONSTEXPR auto operator=(failure<E2> &&other) noexcept(std::is_nothrow_assignable<E, E2 &&>::value)
+        -> failure &;
 
       //--------------------------------------------------------------------------
       // Observers
@@ -572,10 +546,10 @@ namespace RESULT_NAMESPACE_INTERNAL
       RESULT_CPP14_CONSTEXPR
       auto error() & noexcept -> typename std::add_lvalue_reference<E>::type;
       RESULT_CPP14_CONSTEXPR
-      auto           error() && noexcept -> typename std::add_rvalue_reference<E>::type;
-      constexpr auto error() const& noexcept ->
+      auto           error()           &&noexcept -> typename std::add_rvalue_reference<E>::type;
+      constexpr auto error() const & noexcept ->
         typename std::add_lvalue_reference<typename std::add_const<E>::type>::type;
-      constexpr auto error() const&& noexcept ->
+      constexpr auto error() const && noexcept ->
         typename std::add_rvalue_reference<typename std::add_const<E>::type>::type;
       /// \}
 
@@ -593,9 +567,9 @@ namespace RESULT_NAMESPACE_INTERNAL
     };
 
 #if __cplusplus >= 201703L
-    template <typename T> failure(std::reference_wrapper<T>) -> failure<T&>;
+    template <typename T> failure(std::reference_wrapper<T>) -> failure<T &>;
 
-    template <typename T> failure(T&&) -> failure<typename std::decay<T>::type>;
+    template <typename T> failure(T &&) -> failure<typename std::decay<T>::type>;
 #endif
 
     //===========================================================================
@@ -607,17 +581,17 @@ namespace RESULT_NAMESPACE_INTERNAL
     //---------------------------------------------------------------------------
 
     template <typename E1, typename E2>
-    constexpr auto operator==(const failure<E1>& lhs, const failure<E2>& rhs) noexcept -> bool;
+    constexpr auto operator==(const failure<E1> &lhs, const failure<E2> &rhs) noexcept -> bool;
     template <typename E1, typename E2>
-    constexpr auto operator!=(const failure<E1>& lhs, const failure<E2>& rhs) noexcept -> bool;
+    constexpr auto operator!=(const failure<E1> &lhs, const failure<E2> &rhs) noexcept -> bool;
     template <typename E1, typename E2>
-    constexpr auto operator<(const failure<E1>& lhs, const failure<E2>& rhs) noexcept -> bool;
+    constexpr auto operator<(const failure<E1> &lhs, const failure<E2> &rhs) noexcept -> bool;
     template <typename E1, typename E2>
-    constexpr auto operator>(const failure<E1>& lhs, const failure<E2>& rhs) noexcept -> bool;
+    constexpr auto operator>(const failure<E1> &lhs, const failure<E2> &rhs) noexcept -> bool;
     template <typename E1, typename E2>
-    constexpr auto operator<=(const failure<E1>& lhs, const failure<E2>& rhs) noexcept -> bool;
+    constexpr auto operator<=(const failure<E1> &lhs, const failure<E2> &rhs) noexcept -> bool;
     template <typename E1, typename E2>
-    constexpr auto operator>=(const failure<E1>& lhs, const failure<E2>& rhs) noexcept -> bool;
+    constexpr auto operator>=(const failure<E1> &lhs, const failure<E2> &rhs) noexcept -> bool;
 
     //---------------------------------------------------------------------------
     // Utilities
@@ -628,14 +602,14 @@ namespace RESULT_NAMESPACE_INTERNAL
     /// \param e the failure value
     /// \return a constructed failure value
     template <typename E>
-    RESULT_WARN_UNUSED constexpr auto fail(E&& e) noexcept(
+    RESULT_WARN_UNUSED constexpr auto fail(E &&e) noexcept(
       std::is_nothrow_constructible<typename std::decay<E>::type, E>::value) -> failure<typename std::decay<E>::type>;
 
     /// \brief Deduces a failure reference from a reverence_wrapper
     ///
     /// \param e the failure value
     /// \return a constructed failure reference
-    template <typename E> RESULT_WARN_UNUSED constexpr auto fail(std::reference_wrapper<E> e) noexcept -> failure<E&>;
+    template <typename E> RESULT_WARN_UNUSED constexpr auto fail(std::reference_wrapper<E> e) noexcept -> failure<E &>;
 
     /// \brief Constructs a failure type from a series of arguments
     ///
@@ -646,7 +620,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       typename E,
       typename... Args,
       typename = typename std::enable_if<std::is_constructible<E, Args...>::value>::type>
-    RESULT_WARN_UNUSED constexpr auto fail(Args&&... args) noexcept(std::is_nothrow_constructible<E, Args...>::value)
+    RESULT_WARN_UNUSED constexpr auto fail(Args &&...args) noexcept(std::is_nothrow_constructible<E, Args...>::value)
       -> failure<E>;
 
     /// \brief Constructs a failure type from an initializer list and series of
@@ -660,7 +634,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       typename U,
       typename... Args,
       typename = typename std::enable_if<std::is_constructible<E, std::initializer_list<U>, Args...>::value>::type>
-    RESULT_WARN_UNUSED constexpr auto fail(std::initializer_list<U> ilist, Args&&... args) noexcept(
+    RESULT_WARN_UNUSED constexpr auto fail(std::initializer_list<U> ilist, Args &&...args) noexcept(
       std::is_nothrow_constructible<E, std::initializer_list<U>, Args...>::value) -> failure<E>;
 
     /// \brief Swaps the contents of two failure values
@@ -668,24 +642,23 @@ namespace RESULT_NAMESPACE_INTERNAL
     /// \param lhs the left failure
     /// \param rhs the right failure
     template <typename E>
-    auto swap(failure<E>& lhs, failure<E>& rhs)
+    auto swap(failure<E> &lhs, failure<E> &rhs)
 #if __cplusplus >= 201703L
       noexcept(std::is_nothrow_swappable<E>::value) -> void;
 #else
       noexcept(std::is_nothrow_move_constructible<E>::value) -> void;
 #endif
 
-    namespace detail
-    {
+    namespace detail {
 
       //=========================================================================
       // class : unit
       //=========================================================================
 
-      /// \brief A standalone monostate object (effectively std::monostate). This
+      /// \brief A standalone monostate object (effectively std::monostate).
+      /// This
       ///        exists to allow for `void` specializations
-      struct unit
-      {};
+      struct unit {};
 
       //=========================================================================
       // non-member functions : class : unit
@@ -711,8 +684,8 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// \brief A basic utility that acts as a union containing the T and E
       ///        types
       ///
-      /// This is specialized on the case that both T and E are trivial, in which
-      /// case `result_union` is also trivial
+      /// This is specialized on the case that both T and E are trivial, in
+      /// which case `result_union` is also trivial
       ///
       /// \tparam T the value type result to be returned
       /// \tparam E the error type returned on failure
@@ -722,8 +695,7 @@ namespace RESULT_NAMESPACE_INTERNAL
         typename T,
         typename E,
         bool IsTrivial = std::is_trivially_destructible<T>::value && std::is_trivially_destructible<E>::value>
-      struct result_union
-      {
+      struct result_union {
         //-----------------------------------------------------------------------
         // Public Member Types
         //-----------------------------------------------------------------------
@@ -745,22 +717,22 @@ namespace RESULT_NAMESPACE_INTERNAL
         ///
         /// \param args the arguments to forward to T's constructor
         template <typename... Args>
-        constexpr result_union(in_place_t, Args&&... args) noexcept(std::is_nothrow_constructible<T, Args...>::value);
+        constexpr result_union(in_place_t, Args &&...args) noexcept(std::is_nothrow_constructible<T, Args...>::value);
 
         /// \brief Constructs the underlying error from the specified \p args
         ///
         /// \param args the arguments to forward to E's constructor
         template <typename... Args>
-        constexpr result_union(in_place_error_t, Args&&... args) noexcept(
+        constexpr result_union(in_place_error_t, Args &&...args) noexcept(
           std::is_nothrow_constructible<E, Args...>::value);
 
-        result_union(const result_union&) = default;
-        result_union(result_union&&)      = default;
+        result_union(const result_union &) = default;
+        result_union(result_union &&)      = default;
 
         //-----------------------------------------------------------------------
 
-        auto operator=(const result_union&) -> result_union& = default;
-        auto operator=(result_union&&) -> result_union&      = default;
+        auto operator=(const result_union &) -> result_union & = default;
+        auto operator=(result_union &&) -> result_union      & = default;
 
         //-----------------------------------------------------------------------
         // Modifiers
@@ -773,8 +745,7 @@ namespace RESULT_NAMESPACE_INTERNAL
         // Public Members
         //-----------------------------------------------------------------------
 
-        union
-        {
+        union {
           underlying_value_type m_value;
           underlying_error_type m_error;
           unit                  m_empty;
@@ -785,8 +756,7 @@ namespace RESULT_NAMESPACE_INTERNAL
 
       //-------------------------------------------------------------------------
 
-      template <typename T, typename E> struct result_union<T, E, false>
-      {
+      template <typename T, typename E> struct result_union<T, E, false> {
         //-----------------------------------------------------------------------
         // Public Member Types
         //-----------------------------------------------------------------------
@@ -808,17 +778,17 @@ namespace RESULT_NAMESPACE_INTERNAL
         ///
         /// \param args the arguments to forward to T's constructor
         template <typename... Args>
-        constexpr result_union(in_place_t, Args&&... args) noexcept(std::is_nothrow_constructible<T, Args...>::value);
+        constexpr result_union(in_place_t, Args &&...args) noexcept(std::is_nothrow_constructible<T, Args...>::value);
 
         /// \brief Constructs the underlying error from the specified \p args
         ///
         /// \param args the arguments to forward to E's constructor
         template <typename... Args>
-        constexpr result_union(in_place_error_t, Args&&... args) noexcept(
+        constexpr result_union(in_place_error_t, Args &&...args) noexcept(
           std::is_nothrow_constructible<E, Args...>::value);
 
-        result_union(const result_union&) = default;
-        result_union(result_union&&)      = default;
+        result_union(const result_union &) = default;
+        result_union(result_union &&)      = default;
 
         //-----------------------------------------------------------------------
 
@@ -827,8 +797,8 @@ namespace RESULT_NAMESPACE_INTERNAL
 
         //-----------------------------------------------------------------------
 
-        auto operator=(const result_union&) -> result_union& = default;
-        auto operator=(result_union&&) -> result_union&      = default;
+        auto operator=(const result_union &) -> result_union & = default;
+        auto operator=(result_union &&) -> result_union      & = default;
 
         //-----------------------------------------------------------------------
         // Modifiers
@@ -841,8 +811,7 @@ namespace RESULT_NAMESPACE_INTERNAL
         // Public Members
         //-----------------------------------------------------------------------
 
-        union
-        {
+        union {
           underlying_value_type m_value;
           underlying_error_type m_error;
           unit                  m_empty;
@@ -869,8 +838,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// \tparam T the value type
       /// \tparam E the error type
       ///////////////////////////////////////////////////////////////////////////
-      template <typename T, typename E> struct result_construct_base
-      {
+      template <typename T, typename E> struct result_construct_base {
         //-----------------------------------------------------------------------
         // Constructors / Assignment
         //-----------------------------------------------------------------------
@@ -885,21 +853,21 @@ namespace RESULT_NAMESPACE_INTERNAL
         ///
         /// \param args the arguments to forward to T's constructor
         template <typename... Args>
-        constexpr result_construct_base(in_place_t, Args&&... args) noexcept(
+        constexpr result_construct_base(in_place_t, Args &&...args) noexcept(
           std::is_nothrow_constructible<T, Args...>::value);
 
         /// \brief Constructs the underlying error from the specified \p args
         ///
         /// \param args the arguments to forward to E's constructor
         template <typename... Args>
-        constexpr result_construct_base(in_place_error_t, Args&&... args) noexcept(
+        constexpr result_construct_base(in_place_error_t, Args &&...args) noexcept(
           std::is_nothrow_constructible<E, Args...>::value);
 
-        result_construct_base(const result_construct_base&) = default;
-        result_construct_base(result_construct_base&&)      = default;
+        result_construct_base(const result_construct_base &) = default;
+        result_construct_base(result_construct_base &&)      = default;
 
-        auto operator=(const result_construct_base&) -> result_construct_base& = default;
-        auto operator=(result_construct_base&&) -> result_construct_base&      = default;
+        auto operator=(const result_construct_base &) -> result_construct_base & = default;
+        auto operator=(result_construct_base &&) -> result_construct_base      & = default;
 
         //-----------------------------------------------------------------------
         // Construction / Assignment
@@ -910,22 +878,24 @@ namespace RESULT_NAMESPACE_INTERNAL
         /// \note This is an implementation detail only meant to be used during
         ///       construction
         ///
-        /// \pre there is no contained value or error at the time of construction
+        /// \pre there is no contained value or error at the time of
+        /// construction
         ///
         /// \param args the arguments to forward to T's constructor
         template <typename... Args>
-        auto construct_value(Args&&... args) noexcept(std::is_nothrow_constructible<T, Args...>::value) -> void;
+        auto construct_value(Args &&...args) noexcept(std::is_nothrow_constructible<T, Args...>::value) -> void;
 
         /// \brief Constructs the error type from \p args
         ///
         /// \note This is an implementation detail only meant to be used during
         ///       construction
         ///
-        /// \pre there is no contained value or error at the time of construction
+        /// \pre there is no contained value or error at the time of
+        /// construction
         ///
         /// \param args the arguments to forward to E's constructor
         template <typename... Args>
-        auto construct_error(Args&&... args) noexcept(std::is_nothrow_constructible<E, Args...>::value) -> void;
+        auto construct_error(Args &&...args) noexcept(std::is_nothrow_constructible<E, Args...>::value) -> void;
 
         /// \brief Constructs the underlying error from the \p other result
         ///
@@ -935,43 +905,45 @@ namespace RESULT_NAMESPACE_INTERNAL
         /// \note This is an implementation detail only meant to be used during
         ///       construction of `result<void, E>` types
         ///
-        /// \pre there is no contained value or error at the time of construction
+        /// \pre there is no contained value or error at the time of
+        /// construction
         ///
         /// \param other the other result to construct
-        template <typename Result> auto construct_error_from_result(Result&& other) -> void;
+        template <typename Result> auto construct_error_from_result(Result &&other) -> void;
 
         /// \brief Constructs the underlying type from a result object
         ///
         /// \note This is an implementation detail only meant to be used during
         ///       construction
         ///
-        /// \pre there is no contained value or error at the time of construction
+        /// \pre there is no contained value or error at the time of
+        /// construction
         ///
         /// \param other the other result to construct
-        template <typename Result> auto construct_from_result(Result&& other) -> void;
+        template <typename Result> auto construct_from_result(Result &&other) -> void;
 
         //-----------------------------------------------------------------------
 
         template <typename Value>
-        auto assign_value(Value&& value) noexcept(std::is_nothrow_assignable<T, Value>::value) -> void;
+        auto assign_value(Value &&value) noexcept(std::is_nothrow_assignable<T, Value>::value) -> void;
 
         template <typename Error>
-        auto assign_error(Error&& error) noexcept(std::is_nothrow_assignable<E, Error>::value) -> void;
+        auto assign_error(Error &&error) noexcept(std::is_nothrow_assignable<E, Error>::value) -> void;
 
-        template <typename Result> auto assign_from_result(Result&& other) -> void;
+        template <typename Result> auto assign_from_result(Result &&other) -> void;
 
         //-----------------------------------------------------------------------
 
         template <typename ReferenceWrapper>
-        auto construct_value_from_result_impl(std::true_type, ReferenceWrapper&& reference) noexcept -> void;
+        auto construct_value_from_result_impl(std::true_type, ReferenceWrapper &&reference) noexcept -> void;
 
         template <typename Value>
-        auto construct_value_from_result_impl(std::false_type, Value&& value) noexcept(
+        auto construct_value_from_result_impl(std::false_type, Value &&value) noexcept(
           std::is_nothrow_constructible<T, Value>::value) -> void;
 
-        template <typename Result> auto assign_value_from_result_impl(std::true_type, Result&& other) -> void;
+        template <typename Result> auto assign_value_from_result_impl(std::true_type, Result &&other) -> void;
 
-        template <typename Result> auto assign_value_from_result_impl(std::false_type, Result&& other) -> void;
+        template <typename Result> auto assign_value_from_result_impl(std::false_type, Result &&other) -> void;
 
         //-----------------------------------------------------------------------
         // Public Members
@@ -986,17 +958,17 @@ namespace RESULT_NAMESPACE_INTERNAL
       // class : result_trivial_copy_ctor_base
       //=========================================================================
 
-      template <typename T, typename E> struct result_trivial_copy_ctor_base_impl : result_construct_base<T, E>
-      {
+      template <typename T, typename E> struct result_trivial_copy_ctor_base_impl : result_construct_base<T, E> {
         using base_type = result_construct_base<T, E>;
         using base_type::base_type;
 
-        result_trivial_copy_ctor_base_impl(const result_trivial_copy_ctor_base_impl& other) noexcept(
+        result_trivial_copy_ctor_base_impl(const result_trivial_copy_ctor_base_impl &other) noexcept(
           std::is_nothrow_copy_constructible<T>::value && std::is_nothrow_copy_constructible<E>::value);
-        result_trivial_copy_ctor_base_impl(result_trivial_copy_ctor_base_impl&& other) = default;
+        result_trivial_copy_ctor_base_impl(result_trivial_copy_ctor_base_impl &&other) = default;
 
-        auto operator=(const result_trivial_copy_ctor_base_impl& other) -> result_trivial_copy_ctor_base_impl& = default;
-        auto operator=(result_trivial_copy_ctor_base_impl&& other) -> result_trivial_copy_ctor_base_impl& = default;
+        auto operator=(const result_trivial_copy_ctor_base_impl &other) -> result_trivial_copy_ctor_base_impl & =
+                                                                             default;
+        auto operator=(result_trivial_copy_ctor_base_impl &&other) -> result_trivial_copy_ctor_base_impl & = default;
       };
 
       template <bool Condition, typename Base>
@@ -1011,17 +983,18 @@ namespace RESULT_NAMESPACE_INTERNAL
       // class : result_trivial_move_ctor_base
       //=========================================================================
 
-      template <typename T, typename E> struct result_trivial_move_ctor_base_impl : result_trivial_copy_ctor_base<T, E>
-      {
+      template <typename T, typename E>
+      struct result_trivial_move_ctor_base_impl : result_trivial_copy_ctor_base<T, E> {
         using base_type = result_trivial_copy_ctor_base<T, E>;
         using base_type::base_type;
 
-        result_trivial_move_ctor_base_impl(const result_trivial_move_ctor_base_impl& other) = default;
-        result_trivial_move_ctor_base_impl(result_trivial_move_ctor_base_impl&& other) noexcept(
+        result_trivial_move_ctor_base_impl(const result_trivial_move_ctor_base_impl &other) = default;
+        result_trivial_move_ctor_base_impl(result_trivial_move_ctor_base_impl &&other) noexcept(
           std::is_nothrow_move_constructible<T>::value && std::is_nothrow_move_constructible<E>::value);
 
-        auto operator=(const result_trivial_move_ctor_base_impl& other) -> result_trivial_move_ctor_base_impl& = default;
-        auto operator=(result_trivial_move_ctor_base_impl&& other) -> result_trivial_move_ctor_base_impl& = default;
+        auto operator=(const result_trivial_move_ctor_base_impl &other) -> result_trivial_move_ctor_base_impl & =
+                                                                             default;
+        auto operator=(result_trivial_move_ctor_base_impl &&other) -> result_trivial_move_ctor_base_impl & = default;
       };
 
       template <typename T, typename E>
@@ -1034,19 +1007,18 @@ namespace RESULT_NAMESPACE_INTERNAL
       //=========================================================================
 
       template <typename T, typename E>
-      struct result_trivial_copy_assign_base_impl : result_trivial_move_ctor_base<T, E>
-      {
+      struct result_trivial_copy_assign_base_impl : result_trivial_move_ctor_base<T, E> {
         using base_type = result_trivial_move_ctor_base<T, E>;
         using base_type::base_type;
 
-        result_trivial_copy_assign_base_impl(const result_trivial_copy_assign_base_impl& other) = default;
-        result_trivial_copy_assign_base_impl(result_trivial_copy_assign_base_impl&& other)      = default;
+        result_trivial_copy_assign_base_impl(const result_trivial_copy_assign_base_impl &other) = default;
+        result_trivial_copy_assign_base_impl(result_trivial_copy_assign_base_impl &&other)      = default;
 
-        auto operator=(const result_trivial_copy_assign_base_impl& other) noexcept(
+        auto operator=(const result_trivial_copy_assign_base_impl &other) noexcept(
           std::is_nothrow_copy_constructible<T>::value && std::is_nothrow_copy_constructible<E>::value
           && std::is_nothrow_copy_assignable<T>::value
-          && std::is_nothrow_copy_assignable<E>::value) -> result_trivial_copy_assign_base_impl&;
-        auto operator=(result_trivial_copy_assign_base_impl&& other) -> result_trivial_copy_assign_base_impl& = default;
+          && std::is_nothrow_copy_assignable<E>::value) -> result_trivial_copy_assign_base_impl &;
+        auto operator=(result_trivial_copy_assign_base_impl &&other) -> result_trivial_copy_assign_base_impl & = default;
       };
 
       template <typename T, typename E>
@@ -1061,20 +1033,19 @@ namespace RESULT_NAMESPACE_INTERNAL
       //=========================================================================
 
       template <typename T, typename E>
-      struct result_trivial_move_assign_base_impl : result_trivial_copy_assign_base<T, E>
-      {
+      struct result_trivial_move_assign_base_impl : result_trivial_copy_assign_base<T, E> {
         using base_type = result_trivial_copy_assign_base<T, E>;
         using base_type::base_type;
 
-        result_trivial_move_assign_base_impl(const result_trivial_move_assign_base_impl& other) = default;
-        result_trivial_move_assign_base_impl(result_trivial_move_assign_base_impl&& other)      = default;
+        result_trivial_move_assign_base_impl(const result_trivial_move_assign_base_impl &other) = default;
+        result_trivial_move_assign_base_impl(result_trivial_move_assign_base_impl &&other)      = default;
 
-        auto operator=(const result_trivial_move_assign_base_impl& other) -> result_trivial_move_assign_base_impl& =
+        auto operator=(const result_trivial_move_assign_base_impl &other) -> result_trivial_move_assign_base_impl & =
                                                                                default;
-        auto operator=(result_trivial_move_assign_base_impl&& other) noexcept(
+        auto operator=(result_trivial_move_assign_base_impl &&other) noexcept(
           std::is_nothrow_move_constructible<T>::value && std::is_nothrow_move_constructible<E>::value
           && std::is_nothrow_move_assignable<T>::value
-          && std::is_nothrow_move_assignable<E>::value) -> result_trivial_move_assign_base_impl&;
+          && std::is_nothrow_move_assignable<E>::value) -> result_trivial_move_assign_base_impl &;
       };
 
       template <typename T, typename E>
@@ -1088,16 +1059,15 @@ namespace RESULT_NAMESPACE_INTERNAL
       // class : disable_copy_ctor
       //=========================================================================
 
-      template <typename T, typename E> struct disable_copy_ctor : result_trivial_move_assign_base<T, E>
-      {
+      template <typename T, typename E> struct disable_copy_ctor : result_trivial_move_assign_base<T, E> {
         using base_type = result_trivial_move_assign_base<T, E>;
         using base_type::base_type;
 
-        disable_copy_ctor(const disable_copy_ctor& other) = delete;
-        disable_copy_ctor(disable_copy_ctor&& other)      = default;
+        disable_copy_ctor(const disable_copy_ctor &other) = delete;
+        disable_copy_ctor(disable_copy_ctor &&other)      = default;
 
-        auto operator=(const disable_copy_ctor& other) -> disable_copy_ctor& = default;
-        auto operator=(disable_copy_ctor&& other) -> disable_copy_ctor&      = default;
+        auto operator=(const disable_copy_ctor &other) -> disable_copy_ctor & = default;
+        auto operator=(disable_copy_ctor &&other) -> disable_copy_ctor      & = default;
       };
 
       template <typename T, typename E>
@@ -1109,16 +1079,15 @@ namespace RESULT_NAMESPACE_INTERNAL
       // class : disable_move_ctor
       //=========================================================================
 
-      template <typename T, typename E> struct disable_move_ctor : result_copy_ctor_base<T, E>
-      {
+      template <typename T, typename E> struct disable_move_ctor : result_copy_ctor_base<T, E> {
         using base_type = result_copy_ctor_base<T, E>;
         using base_type::base_type;
 
-        disable_move_ctor(const disable_move_ctor& other) = default;
-        disable_move_ctor(disable_move_ctor&& other)      = delete;
+        disable_move_ctor(const disable_move_ctor &other) = default;
+        disable_move_ctor(disable_move_ctor &&other)      = delete;
 
-        auto operator=(const disable_move_ctor& other) -> disable_move_ctor& = default;
-        auto operator=(disable_move_ctor&& other) -> disable_move_ctor&      = default;
+        auto operator=(const disable_move_ctor &other) -> disable_move_ctor & = default;
+        auto operator=(disable_move_ctor &&other) -> disable_move_ctor      & = default;
       };
 
       template <typename T, typename E>
@@ -1130,16 +1099,15 @@ namespace RESULT_NAMESPACE_INTERNAL
       // class : disable_move_assignment
       //=========================================================================
 
-      template <typename T, typename E> struct disable_move_assignment : result_move_ctor_base<T, E>
-      {
+      template <typename T, typename E> struct disable_move_assignment : result_move_ctor_base<T, E> {
         using base_type = result_move_ctor_base<T, E>;
         using base_type::base_type;
 
-        disable_move_assignment(const disable_move_assignment& other) = default;
-        disable_move_assignment(disable_move_assignment&& other)      = default;
+        disable_move_assignment(const disable_move_assignment &other) = default;
+        disable_move_assignment(disable_move_assignment &&other)      = default;
 
-        auto operator=(const disable_move_assignment& other) -> disable_move_assignment& = delete;
-        auto operator=(disable_move_assignment&& other) -> disable_move_assignment&      = default;
+        auto operator=(const disable_move_assignment &other) -> disable_move_assignment & = delete;
+        auto operator=(disable_move_assignment &&other) -> disable_move_assignment      & = default;
       };
 
       template <typename T, typename E>
@@ -1152,16 +1120,15 @@ namespace RESULT_NAMESPACE_INTERNAL
       // class : disable_copy_assignment
       //=========================================================================
 
-      template <typename T, typename E> struct disable_copy_assignment : result_copy_assign_base<T, E>
-      {
+      template <typename T, typename E> struct disable_copy_assignment : result_copy_assign_base<T, E> {
         using base_type = result_copy_assign_base<T, E>;
         using base_type::base_type;
 
-        disable_copy_assignment(const disable_copy_assignment& other) = default;
-        disable_copy_assignment(disable_copy_assignment&& other)      = default;
+        disable_copy_assignment(const disable_copy_assignment &other) = default;
+        disable_copy_assignment(disable_copy_assignment &&other)      = default;
 
-        auto operator=(const disable_copy_assignment& other) -> disable_copy_assignment& = default;
-        auto operator=(disable_copy_assignment&& other) -> disable_copy_assignment&      = delete;
+        auto operator=(const disable_copy_assignment &other) -> disable_copy_assignment & = default;
+        auto operator=(disable_copy_assignment &&other) -> disable_copy_assignment      & = delete;
       };
 
       template <typename T, typename E>
@@ -1185,80 +1152,81 @@ namespace RESULT_NAMESPACE_INTERNAL
         bool,
         (
           // T1 constructible from result<T2,E2>
-          std::is_constructible<T1, result<T2, E2>&>::value || std::is_constructible<T1, const result<T2, E2>&>::value
-          || std::is_constructible<T1, result<T2, E2>&&>::value
-          || std::is_constructible<T1, const result<T2, E2>&&>::value ||
+          std::is_constructible<T1, result<T2, E2> &>::value || std::is_constructible<T1, const result<T2, E2> &>::value
+          || std::is_constructible<T1, result<T2, E2> &&>::value
+          || std::is_constructible<T1, const result<T2, E2> &&>::value ||
 
           // E1 constructible from result<T2,E2>
-          std::is_constructible<E1, result<T2, E2>&>::value || std::is_constructible<E1, const result<T2, E2>&>::value
-          || std::is_constructible<E1, result<T2, E2>&&>::value
-          || std::is_constructible<E1, const result<T2, E2>&&>::value ||
+          std::is_constructible<E1, result<T2, E2> &>::value || std::is_constructible<E1, const result<T2, E2> &>::value
+          || std::is_constructible<E1, result<T2, E2> &&>::value
+          || std::is_constructible<E1, const result<T2, E2> &&>::value ||
 
           // result<T2,E2> convertible to T1
-          std::is_convertible<result<T2, E2>&, T1>::value || std::is_convertible<const result<T2, E2>&, T1>::value
-          || std::is_convertible<result<T2, E2>&&, T1>::value || std::is_convertible<const result<T2, E2>&&, T1>::value ||
+          std::is_convertible<result<T2, E2> &, T1>::value || std::is_convertible<const result<T2, E2> &, T1>::value
+          || std::is_convertible<result<T2, E2> &&, T1>::value
+          || std::is_convertible<const result<T2, E2> &&, T1>::value ||
 
           // result<T2,E2> convertible to E2
-          std::is_convertible<result<T2, E2>&, E1>::value || std::is_convertible<const result<T2, E2>&, E1>::value
-          || std::is_convertible<result<T2, E2>&&, E1>::value
-          || std::is_convertible<const result<T2, E2>&&, E1>::value)>;
+          std::is_convertible<result<T2, E2> &, E1>::value || std::is_convertible<const result<T2, E2> &, E1>::value
+          || std::is_convertible<result<T2, E2> &&, E1>::value
+          || std::is_convertible<const result<T2, E2> &&, E1>::value)>;
 
       //-------------------------------------------------------------------------
 
       template <typename T1, typename E1, typename T2, typename E2>
       using result_is_copy_convertible = std::integral_constant<
         bool,
-        (!result_is_convertible<T1, E1, T2, E2>::value && std::is_constructible<T1, const T2&>::value
-         && std::is_constructible<E1, const E2&>::value)>;
+        (!result_is_convertible<T1, E1, T2, E2>::value && std::is_constructible<T1, const T2 &>::value
+         && std::is_constructible<E1, const E2 &>::value)>;
 
       template <typename T1, typename E1, typename T2, typename E2>
       using result_is_implicit_copy_convertible = std::integral_constant<
         bool,
-        (result_is_copy_convertible<T1, E1, T2, E2>::value && std::is_convertible<const T2&, T1>::value
-         && std::is_convertible<const E2&, E1>::value)>;
+        (result_is_copy_convertible<T1, E1, T2, E2>::value && std::is_convertible<const T2 &, T1>::value
+         && std::is_convertible<const E2 &, E1>::value)>;
 
       template <typename T1, typename E1, typename T2, typename E2>
       using result_is_explicit_copy_convertible = std::integral_constant<
         bool,
         (result_is_copy_convertible<T1, E1, T2, E2>::value
-         && (!std::is_convertible<const T2&, T1>::value || !std::is_convertible<const E2&, E1>::value))>;
+         && (!std::is_convertible<const T2 &, T1>::value || !std::is_convertible<const E2 &, E1>::value))>;
 
       //-------------------------------------------------------------------------
 
       template <typename T1, typename E1, typename T2, typename E2>
       using result_is_move_convertible = std::integral_constant<
         bool,
-        (!result_is_convertible<T1, E1, T2, E2>::value && std::is_constructible<T1, T2&&>::value
-         && std::is_constructible<E1, E2&&>::value)>;
+        (!result_is_convertible<T1, E1, T2, E2>::value && std::is_constructible<T1, T2 &&>::value
+         && std::is_constructible<E1, E2 &&>::value)>;
 
       template <typename T1, typename E1, typename T2, typename E2>
       using result_is_implicit_move_convertible = std::integral_constant<
         bool,
-        (result_is_move_convertible<T1, E1, T2, E2>::value && std::is_convertible<T2&&, T1>::value
-         && std::is_convertible<E2&&, E1>::value)>;
+        (result_is_move_convertible<T1, E1, T2, E2>::value && std::is_convertible<T2 &&, T1>::value
+         && std::is_convertible<E2 &&, E1>::value)>;
 
       template <typename T1, typename E1, typename T2, typename E2>
       using result_is_explicit_move_convertible = std::integral_constant<
         bool,
         (result_is_move_convertible<T1, E1, T2, E2>::value
-         && (!std::is_convertible<T2&&, T1>::value || !std::is_convertible<E2&&, E1>::value))>;
+         && (!std::is_convertible<T2 &&, T1>::value || !std::is_convertible<E2 &&, E1>::value))>;
 
       //-------------------------------------------------------------------------
 
       template <typename T, typename U>
       using result_is_value_convertible = std::integral_constant<
         bool,
-        (std::is_constructible<T, U&&>::value && !std::is_same<typename std::decay<U>::type, in_place_t>::value
+        (std::is_constructible<T, U &&>::value && !std::is_same<typename std::decay<U>::type, in_place_t>::value
          && !std::is_same<typename std::decay<U>::type, in_place_error_t>::value
          && !is_result<typename std::decay<U>::type>::value)>;
 
       template <typename T, typename U>
       using result_is_explicit_value_convertible =
-        std::integral_constant<bool, (result_is_value_convertible<T, U>::value && !std::is_convertible<U&&, T>::value)>;
+        std::integral_constant<bool, (result_is_value_convertible<T, U>::value && !std::is_convertible<U &&, T>::value)>;
 
       template <typename T, typename U>
       using result_is_implicit_value_convertible =
-        std::integral_constant<bool, (result_is_value_convertible<T, U>::value && std::is_convertible<U&&, T>::value)>;
+        std::integral_constant<bool, (result_is_value_convertible<T, U>::value && std::is_convertible<U &&, T>::value)>;
 
       //-------------------------------------------------------------------------
 
@@ -1267,28 +1235,30 @@ namespace RESULT_NAMESPACE_INTERNAL
         bool,
         (result_is_convertible<T1, E1, T2, E2>::value &&
 
-         std::is_assignable<T1&, result<T2, E2>&>::value && std::is_assignable<T1&, const result<T2, E2>&>::value
-         && std::is_assignable<T1&, result<T2, E2>&&>::value && std::is_assignable<T1&, const result<T2, E2>&&>::value &&
+         std::is_assignable<T1 &, result<T2, E2> &>::value && std::is_assignable<T1 &, const result<T2, E2> &>::value
+         && std::is_assignable<T1 &, result<T2, E2> &&>::value
+         && std::is_assignable<T1 &, const result<T2, E2> &&>::value &&
 
-         std::is_assignable<E1&, result<T2, E2>&>::value && std::is_assignable<E1&, const result<T2, E2>&>::value
-         && std::is_assignable<E1&, result<T2, E2>&&>::value && std::is_assignable<E1&, const result<T2, E2>&&>::value)>;
+         std::is_assignable<E1 &, result<T2, E2> &>::value && std::is_assignable<E1 &, const result<T2, E2> &>::value
+         && std::is_assignable<E1 &, result<T2, E2> &&>::value
+         && std::is_assignable<E1 &, const result<T2, E2> &&>::value)>;
 
       template <typename T1, typename E1, typename T2, typename E2>
       using result_is_copy_convert_assignable = std::integral_constant<
         bool,
         (!result_is_convert_assignable<T1, E1, T2, E2>::value &&
 
-         std::is_nothrow_constructible<T1, const T2&>::value
-         && std::is_assignable<wrapped_result_type<T1>&, const T2&>::value
-         && std::is_nothrow_constructible<E1, const E2&>::value && std::is_assignable<E1&, const E2&>::value)>;
+         std::is_nothrow_constructible<T1, const T2 &>::value
+         && std::is_assignable<wrapped_result_type<T1> &, const T2 &>::value
+         && std::is_nothrow_constructible<E1, const E2 &>::value && std::is_assignable<E1 &, const E2 &>::value)>;
 
       template <typename T1, typename E1, typename T2, typename E2>
       using result_is_move_convert_assignable = std::integral_constant<
         bool,
         (!result_is_convert_assignable<T1, E1, T2, E2>::value &&
 
-         std::is_nothrow_constructible<T1, T2&&>::value && std::is_assignable<T1&, T2&&>::value
-         && std::is_nothrow_constructible<E1, E2&&>::value && std::is_assignable<E1&, E2&&>::value)>;
+         std::is_nothrow_constructible<T1, T2 &&>::value && std::is_assignable<T1 &, T2 &&>::value
+         && std::is_nothrow_constructible<E1, E2 &&>::value && std::is_assignable<E1 &, E2 &&>::value)>;
 
       //-------------------------------------------------------------------------
 
@@ -1296,29 +1266,28 @@ namespace RESULT_NAMESPACE_INTERNAL
       using result_is_value_assignable = std::integral_constant<
         bool,
         (!is_result<typename std::decay<U>::type>::value && !is_failure<typename std::decay<U>::type>::value
-         && std::is_nothrow_constructible<T, U>::value && std::is_assignable<wrapped_result_type<T>&, U>::value
+         && std::is_nothrow_constructible<T, U>::value && std::is_assignable<wrapped_result_type<T> &, U>::value
          && (!std::is_same<typename std::decay<U>::type, typename std::decay<T>::type>::value || !std::is_scalar<T>::value))>;
 
       template <typename E, typename E2>
       using result_is_failure_assignable =
-        std::integral_constant<bool, (std::is_nothrow_constructible<E, E2>::value && std::is_assignable<E&, E2>::value)>;
+        std::integral_constant<bool, (std::is_nothrow_constructible<E, E2>::value && std::is_assignable<E &, E2>::value)>;
 
-      // Friending 'extract_error" below was causing some compilers to incorrectly
-      // identify `exp.m_storage.m_error` as being an access violation despite the
-      // friendship. Using a type name instead seems to be ubiquitous across
-      // compilers
-      struct result_error_extractor
-      {
-        template <typename T, typename E> static constexpr auto get(const result<T, E>& exp) noexcept -> const E&;
-        template <typename T, typename E> static constexpr auto get(result<T, E>& exp) noexcept -> E&;
+      // Friending 'extract_error" below was causing some compilers to
+      // incorrectly identify `exp.m_storage.m_error` as being an access
+      // violation despite the friendship. Using a type name instead seems to
+      // be ubiquitous across compilers
+      struct result_error_extractor {
+        template <typename T, typename E> static constexpr auto get(const result<T, E> &exp) noexcept -> const E &;
+        template <typename T, typename E> static constexpr auto get(result<T, E> &exp) noexcept -> E &;
       };
 
-      template <typename T, typename E> constexpr auto extract_error(const result<T, E>& exp) noexcept -> const E&;
+      template <typename T, typename E> constexpr auto extract_error(const result<T, E> &exp) noexcept -> const E &;
 
-      template <typename E> [[noreturn]] auto throw_bad_result_access(E&& error) -> void;
+      template <typename E> [[noreturn]] auto throw_bad_result_access(E &&error) -> void;
 
       template <typename String, typename E>
-      [[noreturn]] auto throw_bad_result_access_message(String&& message, E&& error) -> void;
+      [[noreturn]] auto throw_bad_result_access_message(String &&message, E &&error) -> void;
 
     } // namespace detail
 
@@ -1330,8 +1299,9 @@ namespace RESULT_NAMESPACE_INTERNAL
     /// may fail. As opposed to other approaches, such as `std::pair<T,bool>`
     /// or `std::optional`, `result` more accurately conveys the intent of the
     /// user along with the failure condition to the caller. This effectively
-    /// produces an orthogonal error handling mechanism that allows for exception
-    /// safety while also allowing discrete testability of the return type.
+    /// produces an orthogonal error handling mechanism that allows for
+    /// exception safety while also allowing discrete testability of the return
+    /// type.
     ///
     /// `result<T,E>` types may contain a `T` value, which signifies that an
     /// operation succeeded in producing the result value of type `T`. If an
@@ -1342,13 +1312,13 @@ namespace RESULT_NAMESPACE_INTERNAL
     /// calling the `error()` function, even if it contains a value.
     /// In the case that a `result<T,E>` contains a value object, this will
     /// simply return an `E` object constructed through default aggregate
-    /// construction, as if through the expression `E{}`, which is assumed to be
-    /// a "valid" (no-error) state for an `E` type.
-    /// For example:
+    /// construction, as if through the expression `E{}`, which is assumed to
+    /// be a "valid" (no-error) state for an `E` type. For example:
     ///
     /// * `std::error_code{}` produces a default-construct error-code, which is
     ///   the "no error" state,
-    /// * integral (or enum) error codes produce a `0` value (no error), thanks to
+    /// * integral (or enum) error codes produce a `0` value (no error), thanks
+    /// to
     ///   zero-initialization,
     /// * `std::exception_ptr{}` produces a null-pointer,
     /// * `std::string{}` produces an empty string `""`,
@@ -1361,14 +1331,14 @@ namespace RESULT_NAMESPACE_INTERNAL
     /// `operator*()` and `operator->()` are defined.
     ///
     /// When an object of type `result<T,E>` is contextually converted to
-    /// `bool`, the conversion returns `true` if the object contains a value and
-    /// `false` if it contains an error.
+    /// `bool`, the conversion returns `true` if the object contains a value
+    /// and `false` if it contains an error.
     ///
     /// `result` objects do not have a "valueless" state like `variant`s do.
     /// Once a `result` has been constructed with a value or error, the
     /// active underlying type can only be changed through assignment which may
-    /// is only enabled if construction is guaranteed to be *non-throwing*. This
-    /// ensures that a valueless state cannot occur naturally.
+    /// is only enabled if construction is guaranteed to be *non-throwing*.
+    /// This ensures that a valueless state cannot occur naturally.
     ///
     /// Example Use:
     /// \code
@@ -1390,20 +1360,22 @@ namespace RESULT_NAMESPACE_INTERNAL
     /// \tparam T the underlying value type
     /// \tparam E the underlying error type
     ///////////////////////////////////////////////////////////////////////////
-    template <typename T, typename E> class RESULT_NODISCARD result
-    {
+    template <typename T, typename E> class RESULT_NODISCARD result {
       // Type requirements
 
       static_assert(!std::is_abstract<T>::value, "It is ill-formed for T to be abstract type");
       static_assert(
         !std::is_same<typename std::decay<T>::type, in_place_t>::value,
-        "It is ill-formed for T to be a (possibly CV-qualified) in_place_t type");
+        "It is ill-formed for T to be a (possibly CV-qualified) in_place_t "
+        "type");
       static_assert(
         !is_result<typename std::decay<T>::type>::value,
-        "It is ill-formed for T to be a (possibly CV-qualified) 'result' type");
+        "It is ill-formed for T to be a (possibly CV-qualified) 'result' "
+        "type");
       static_assert(
         !is_failure<typename std::decay<T>::type>::value,
-        "It is ill-formed for T to be a (possibly CV-qualified) 'failure' type");
+        "It is ill-formed for T to be a (possibly CV-qualified) 'failure' "
+        "type");
       static_assert(
         !std::is_rvalue_reference<T>::value,
         "It is ill-formed for T to be an rvalue 'result type. "
@@ -1415,13 +1387,16 @@ namespace RESULT_NAMESPACE_INTERNAL
         "It is ill-formed for E to be (possibly CV-qualified) void type");
       static_assert(
         !is_result<typename std::decay<E>::type>::value,
-        "It is ill-formed for E to be a (possibly CV-qualified) 'result' type");
+        "It is ill-formed for E to be a (possibly CV-qualified) 'result' "
+        "type");
       static_assert(
         !is_failure<typename std::decay<E>::type>::value,
-        "It is ill-formed for E to be a (possibly CV-qualified) 'failure' type");
+        "It is ill-formed for E to be a (possibly CV-qualified) 'failure' "
+        "type");
       static_assert(
         !std::is_same<typename std::decay<E>::type, in_place_t>::value,
-        "It is ill-formed for E to be a (possibly CV-qualified) in_place_t type");
+        "It is ill-formed for E to be a (possibly CV-qualified) in_place_t "
+        "type");
       static_assert(
         !std::is_reference<E>::value,
         "It is ill-formed for E to be a reference type. "
@@ -1491,7 +1466,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// ```
       ///
       /// \param other the result to copy
-      constexpr result(const result& other) = default;
+      constexpr result(const result &other) = default;
 
       /// \brief Move constructs a result
       ///
@@ -1524,7 +1499,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// ```
       ///
       /// \param other the result to move
-      constexpr result(result&& other) = default;
+      constexpr result(result &&other) = default;
 
       /// \{
       /// \brief Converting copy constructor
@@ -1566,14 +1541,14 @@ namespace RESULT_NAMESPACE_INTERNAL
         typename T2,
         typename E2,
         typename std::enable_if<detail::result_is_implicit_copy_convertible<T, E, T2, E2>::value, int>::type = 0>
-      result(const result<T2, E2>& other) noexcept(
-        std::is_nothrow_constructible<T, const T2&>::value && std::is_nothrow_constructible<E, const E2&>::value);
+      result(const result<T2, E2> &other) noexcept(
+        std::is_nothrow_constructible<T, const T2 &>::value && std::is_nothrow_constructible<E, const E2 &>::value);
       template <
         typename T2,
         typename E2,
         typename std::enable_if<detail::result_is_explicit_copy_convertible<T, E, T2, E2>::value, int>::type = 0>
-      explicit result(const result<T2, E2>& other) noexcept(
-        std::is_nothrow_constructible<T, const T2&>::value && std::is_nothrow_constructible<E, const E2&>::value);
+      explicit result(const result<T2, E2> &other) noexcept(
+        std::is_nothrow_constructible<T, const T2 &>::value && std::is_nothrow_constructible<E, const E2 &>::value);
       /// \}
 
       /// \{
@@ -1618,14 +1593,14 @@ namespace RESULT_NAMESPACE_INTERNAL
         typename T2,
         typename E2,
         typename std::enable_if<detail::result_is_implicit_move_convertible<T, E, T2, E2>::value, int>::type = 0>
-      result(result<T2, E2>&& other) noexcept(
-        std::is_nothrow_constructible<T, T2&&>::value && std::is_nothrow_constructible<E, E2&&>::value);
+      result(result<T2, E2> &&other) noexcept(
+        std::is_nothrow_constructible<T, T2 &&>::value && std::is_nothrow_constructible<E, E2 &&>::value);
       template <
         typename T2,
         typename E2,
         typename std::enable_if<detail::result_is_explicit_move_convertible<T, E, T2, E2>::value, int>::type = 0>
-      explicit result(result<T2, E2>&& other) noexcept(
-        std::is_nothrow_constructible<T, T2&&>::value && std::is_nothrow_constructible<E, E2&&>::value);
+      explicit result(result<T2, E2> &&other) noexcept(
+        std::is_nothrow_constructible<T, T2 &&>::value && std::is_nothrow_constructible<E, E2 &&>::value);
       /// \}
 
       //-------------------------------------------------------------------------
@@ -1648,7 +1623,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///
       /// \param args the arguments to pass to T's constructor
       template <typename... Args, typename = typename std::enable_if<std::is_constructible<T, Args...>::value>::type>
-      constexpr explicit result(in_place_t, Args&&... args) noexcept(std::is_nothrow_constructible<T, Args...>::value);
+      constexpr explicit result(in_place_t, Args &&...args) noexcept(std::is_nothrow_constructible<T, Args...>::value);
 
       /// \brief Constructs a result object that contains a value
       ///
@@ -1672,8 +1647,8 @@ namespace RESULT_NAMESPACE_INTERNAL
       template <
         typename U,
         typename... Args,
-        typename = typename std::enable_if<std::is_constructible<T, std::initializer_list<U>&, Args...>::value>::type>
-      constexpr explicit result(in_place_t, std::initializer_list<U> ilist, Args&&... args) noexcept(
+        typename = typename std::enable_if<std::is_constructible<T, std::initializer_list<U> &, Args...>::value>::type>
+      constexpr explicit result(in_place_t, std::initializer_list<U> ilist, Args &&...args) noexcept(
         std::is_nothrow_constructible<T, std::initializer_list<U>, Args...>::value);
 
       //-------------------------------------------------------------------------
@@ -1696,7 +1671,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///
       /// \param args the arguments to pass to E's constructor
       template <typename... Args, typename = typename std::enable_if<std::is_constructible<E, Args...>::value>::type>
-      constexpr explicit result(in_place_error_t, Args&&... args) noexcept(
+      constexpr explicit result(in_place_error_t, Args &&...args) noexcept(
         std::is_nothrow_constructible<E, Args...>::value);
 
       /// \brief Constructs a result object that contains an error
@@ -1721,8 +1696,8 @@ namespace RESULT_NAMESPACE_INTERNAL
       template <
         typename U,
         typename... Args,
-        typename = typename std::enable_if<std::is_constructible<E, std::initializer_list<U>&, Args...>::value>::type>
-      constexpr explicit result(in_place_error_t, std::initializer_list<U> ilist, Args&&... args) noexcept(
+        typename = typename std::enable_if<std::is_constructible<E, std::initializer_list<U> &, Args...>::value>::type>
+      constexpr explicit result(in_place_error_t, std::initializer_list<U> ilist, Args &&...args) noexcept(
         std::is_nothrow_constructible<E, std::initializer_list<U>, Args...>::value);
 
       //-------------------------------------------------------------------------
@@ -1746,10 +1721,11 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// ```
       ///
       /// \param e the failure error
-      template <typename E2, typename = typename std::enable_if<std::is_constructible<E, const E2&>::value>::type>
-      constexpr /* implicit */ result(const failure<E2>& e) noexcept(std::is_nothrow_constructible<E, const E2&>::value);
-      template <typename E2, typename = typename std::enable_if<std::is_constructible<E, E2&&>::value>::type>
-      constexpr /* implicit */ result(failure<E2>&& e) noexcept(std::is_nothrow_constructible<E, E2&&>::value);
+      template <typename E2, typename = typename std::enable_if<std::is_constructible<E, const E2 &>::value>::type>
+      constexpr /* implicit */ result(const failure<E2> &e) noexcept(
+        std::is_nothrow_constructible<E, const E2 &>::value);
+      template <typename E2, typename = typename std::enable_if<std::is_constructible<E, E2 &&>::value>::type>
+      constexpr /* implicit */ result(failure<E2> &&e) noexcept(std::is_nothrow_constructible<E, E2 &&>::value);
       /// \}
 
       /// \{
@@ -1786,18 +1762,19 @@ namespace RESULT_NAMESPACE_INTERNAL
       template <
         typename U,
         typename std::enable_if<detail::result_is_explicit_value_convertible<T, U>::value, int>::type = 0>
-      constexpr explicit result(U&& value) noexcept(std::is_nothrow_constructible<T, U>::value);
+      constexpr explicit result(U &&value) noexcept(std::is_nothrow_constructible<T, U>::value);
       template <
         typename U,
         typename std::enable_if<detail::result_is_implicit_value_convertible<T, U>::value, int>::type = 0>
-      constexpr /* implicit */ result(U&& value) noexcept(std::is_nothrow_constructible<T, U>::value);
+      constexpr /* implicit */ result(U &&value) noexcept(std::is_nothrow_constructible<T, U>::value);
       /// \}
 
       //-------------------------------------------------------------------------
 
       /// \brief Copy assigns the result stored in \p other
       ///
-      /// \note This assignment operator only participates in overload resolution
+      /// \note This assignment operator only participates in overload
+      /// resolution
       ///       if the following conditions are met:
       ///       - `std::is_nothrow_copy_constructible_v<T>` is `true`, and
       ///       - `std::is_nothrow_copy_constructible_v<E>` is `true`
@@ -1813,16 +1790,17 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///       - `std::is_trivially_destructible<E>::value`
       ///
       /// \param other the other result to copy
-      auto operator=(const result& other) -> result& = default;
+      auto operator=(const result &other) -> result & = default;
 
       /// \brief Move assigns the result stored in \p other
       ///
-      /// \note This assignment operator only participates in overload resolution
+      /// \note This assignment operator only participates in overload
+      /// resolution
       ///       if the following conditions are met:
       ///       - `std::is_nothrow_copy_constructible_v<T>` is `true`, and
       ///       - `std::is_nothrow_copy_constructible_v<E>` is `true`
-      ///       this restriction guarantees that no 'valueless_by_exception` state
-      ///       may occur.
+      ///       this restriction guarantees that no 'valueless_by_exception`
+      ///       state may occur.
       ///
       /// \note This assignment operator is defined as trivial if the following
       ///       conditions are all `true`:
@@ -1834,18 +1812,19 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///       - `std::is_trivially_destructible<E>::value`
       ///
       /// \param other the other result to copy
-      auto operator=(result&& other) -> result& = default;
+      auto operator=(result &&other) -> result & = default;
 
       /// \brief Copy-converts the state of \p other
       ///
       /// If both `*this` and \p other contain either values or errors, the
       /// underlying value is constructed as if through assignment.
       ///
-      /// Otherwise if `*this` contains a value, but \p other contains an error,
-      /// then the contained value is destroyed by calling its destructor. `*this`
-      /// will no longer contain a value after the call, and will now contain `E`
-      /// constructed as if direct-initializing (but not direct-list-initializing)
-      /// an object with an argument of `const E2&`.
+      /// Otherwise if `*this` contains a value, but \p other contains an
+      /// error, then the contained value is destroyed by calling its
+      /// destructor.
+      /// `*this` will no longer contain a value after the call, and will now
+      /// contain `E` constructed as if direct-initializing (but not
+      /// direct-list-initializing) an object with an argument of `const E2&`.
       ///
       /// If \p other contains a value and `*this` contains an error, then the
       /// contained error is destroyed by calling its destructor. `*this` now
@@ -1866,19 +1845,21 @@ namespace RESULT_NAMESPACE_INTERNAL
         typename T2,
         typename E2,
         typename = typename std::enable_if<detail::result_is_copy_convert_assignable<T, E, T2, E2>::value>::type>
-      auto operator=(const result<T2, E2>& other) noexcept(
-        std::is_nothrow_assignable<T, const T2&>::value && std::is_nothrow_assignable<E, const E2&>::value) -> result&;
+      auto operator=(const result<T2, E2> &other) noexcept(
+        std::is_nothrow_assignable<T, const T2 &>::value
+        && std::is_nothrow_assignable<E, const E2 &>::value) -> result &;
 
       /// \brief Move-converts the state of \p other
       ///
       /// If both `*this` and \p other contain either values or errors, the
       /// underlying value is constructed as if through move-assignment.
       ///
-      /// Otherwise if `*this` contains a value, but \p other contains an error,
-      /// then the contained value is destroyed by calling its destructor. `*this`
-      /// will no longer contain a value after the call, and will now contain `E`
-      /// constructed as if direct-initializing (but not direct-list-initializing)
-      /// an object with an argument of `E2&&`.
+      /// Otherwise if `*this` contains a value, but \p other contains an
+      /// error, then the contained value is destroyed by calling its
+      /// destructor.
+      /// `*this` will no longer contain a value after the call, and will now
+      /// contain `E` constructed as if direct-initializing (but not
+      /// direct-list-initializing) an object with an argument of `E2&&`.
       ///
       /// If \p other contains a value and `*this` contains an error, then the
       /// contained error is destroyed by calling its destructor. `*this` now
@@ -1899,14 +1880,14 @@ namespace RESULT_NAMESPACE_INTERNAL
         typename T2,
         typename E2,
         typename = typename std::enable_if<detail::result_is_move_convert_assignable<T, E, T2, E2>::value>::type>
-      auto operator=(result<T2, E2>&& other) noexcept(
-        std::is_nothrow_assignable<T, T2&&>::value && std::is_nothrow_assignable<E, E2&&>::value) -> result&;
+      auto operator=(result<T2, E2> &&other) noexcept(
+        std::is_nothrow_assignable<T, T2 &&>::value && std::is_nothrow_assignable<E, E2 &&>::value) -> result &;
 
       /// \brief Perfect-forwarded assignment
       ///
       /// Depending on whether `*this` contains a value before the call, the
-      /// contained value is either direct-initialized from std::forward<U>(value)
-      /// or assigned from std::forward<U>(value).
+      /// contained value is either direct-initialized from
+      /// std::forward<U>(value) or assigned from std::forward<U>(value).
       ///
       /// \note The function does not participate in overload resolution unless
       ///       - `std::decay_t<U>` is not a result type,
@@ -1920,14 +1901,14 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// \param value to assign to the contained value
       /// \return reference to `(*this)`
       template <typename U, typename = typename std::enable_if<detail::result_is_value_assignable<T, U>::value>::type>
-      auto operator=(U&& value) noexcept(std::is_nothrow_assignable<T, U>::value) -> result&;
+      auto operator=(U &&value) noexcept(std::is_nothrow_assignable<T, U>::value) -> result &;
 
       /// \{
       /// \brief Perfect-forwarded assignment
       ///
       /// Depending on whether `*this` contains an error before the call, the
-      /// contained error is either direct-initialized via forwarding the error,
-      /// or assigned from forwarding the error
+      /// contained error is either direct-initialized via forwarding the
+      /// error, or assigned from forwarding the error
       ///
       /// \note The function does not participate in overload resolution unless
       ///       - `std::is_nothrow_constructible_v<E, E2>` is `true`, and
@@ -1937,12 +1918,12 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// \return reference to `(*this)`
       template <
         typename E2,
-        typename = typename std::enable_if<detail::result_is_failure_assignable<E, const E2&>::value>::type>
-      auto operator=(const failure<E2>& other) noexcept(std::is_nothrow_assignable<E, const E2&>::value) -> result&;
+        typename = typename std::enable_if<detail::result_is_failure_assignable<E, const E2 &>::value>::type>
+      auto operator=(const failure<E2> &other) noexcept(std::is_nothrow_assignable<E, const E2 &>::value) -> result &;
       template <
         typename E2,
-        typename = typename std::enable_if<detail::result_is_failure_assignable<E, E2&&>::value>::type>
-      auto operator=(failure<E2>&& other) noexcept(std::is_nothrow_assignable<E, E2&&>::value) -> result&;
+        typename = typename std::enable_if<detail::result_is_failure_assignable<E, E2 &&>::value>::type>
+      auto operator=(failure<E2> &&other) noexcept(std::is_nothrow_assignable<E, E2 &&>::value) -> result &;
       /// \}
 
       //-------------------------------------------------------------------------
@@ -1952,8 +1933,8 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// \{
       /// \brief Retrieves a pointer to the contained value
       ///
-      /// This operator exists to give `result` an `optional`-like API for cases
-      /// where it's known that the `result` already contains a value.
+      /// This operator exists to give `result` an `optional`-like API for
+      /// cases where it's known that the `result` already contains a value.
       ///
       /// Care must be taken to ensure that this is only used in safe contexts
       /// where a `T` value is active.
@@ -1974,17 +1955,17 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///
       /// \return a pointer to the contained value
       RESULT_WARN_UNUSED
-      RESULT_CPP14_CONSTEXPR auto operator->() noexcept -> typename std::remove_reference<T>::type*;
+      RESULT_CPP14_CONSTEXPR auto operator->() noexcept -> typename std::remove_reference<T>::type *;
       RESULT_WARN_UNUSED
       constexpr auto operator->() const noexcept ->
-        typename std::remove_reference<typename std::add_const<T>::type>::type*;
+        typename std::remove_reference<typename std::add_const<T>::type>::type *;
       /// \}
 
       /// \{
       /// \brief Retrieves a reference to the contained value
       ///
-      /// This operator exists to give `result` an `optional`-like API for cases
-      /// where it's known that the `result` already contains a value.
+      /// This operator exists to give `result` an `optional`-like API for
+      /// cases where it's known that the `result` already contains a value.
       ///
       /// Care must be taken to ensure that this is only used in safe contexts
       /// where a `T` value is active.
@@ -2011,10 +1992,10 @@ namespace RESULT_NAMESPACE_INTERNAL
       RESULT_WARN_UNUSED
       RESULT_CPP14_CONSTEXPR auto operator*() && noexcept -> typename std::add_rvalue_reference<T>::type;
       RESULT_WARN_UNUSED
-      constexpr auto operator*() const& noexcept ->
+      constexpr auto operator*() const & noexcept ->
         typename std::add_lvalue_reference<typename std::add_const<T>::type>::type;
       RESULT_WARN_UNUSED
-      constexpr auto operator*() const&& noexcept ->
+      constexpr auto operator*() const && noexcept ->
         typename std::add_rvalue_reference<typename std::add_const<T>::type>::type;
       /// \}
 
@@ -2097,8 +2078,8 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// underlying reference.
       ///
       /// If this contains an error, an exception is thrown containing the
-      /// underlying error. The error is consumed propagating the same constness
-      /// and refness of this result.
+      /// underlying error. The error is consumed propagating the same
+      /// constness and refness of this result.
       ///
       /// ### Examples
       ///
@@ -2128,9 +2109,9 @@ namespace RESULT_NAMESPACE_INTERNAL
       RESULT_WARN_UNUSED
       RESULT_CPP14_CONSTEXPR auto value() && -> typename std::add_rvalue_reference<T>::type;
       RESULT_WARN_UNUSED
-      constexpr auto value() const& -> typename std::add_lvalue_reference<typename std::add_const<T>::type>::type;
+      constexpr auto value() const & -> typename std::add_lvalue_reference<typename std::add_const<T>::type>::type;
       RESULT_WARN_UNUSED
-      constexpr auto value() const&& -> typename std::add_rvalue_reference<typename std::add_const<T>::type>::type;
+      constexpr auto value() const && -> typename std::add_rvalue_reference<typename std::add_const<T>::type>::type;
       /// \}
 
       /// \{
@@ -2171,7 +2152,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///
       /// \return the error or a default-constructed error value
       RESULT_WARN_UNUSED
-      constexpr auto error() const& noexcept(
+      constexpr auto error() const & noexcept(
         std::is_nothrow_constructible<E>::value && std::is_nothrow_copy_constructible<E>::value) -> E;
       RESULT_WARN_UNUSED
       RESULT_CPP14_CONSTEXPR auto error() && noexcept(
@@ -2182,14 +2163,15 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// \brief Asserts an expectation that this result contains an error,
       ///        throwing a bad_result_access on failure
       ///
-      /// If this function is invoked from an rvalue of `result`, then this will
-      /// consume the underlying error first, if there is one.
+      /// If this function is invoked from an rvalue of `result`, then this
+      /// will consume the underlying error first, if there is one.
       ///
-      /// \note This function exists as a means to allow for results to be marked
-      ///       `used` without requiring directly inspecting the underlying value.
-      ///       This is, in effect, equivalent to `assert(res.has_value())`,
-      ///       however it uses exceptions to ensure the stack can be unwound, and
-      ///       exceptions invoked.
+      /// \note This function exists as a means to allow for results to be
+      /// marked
+      ///       `used` without requiring directly inspecting the underlying
+      ///       value. This is, in effect, equivalent to
+      ///       `assert(res.has_value())`, however it uses exceptions to ensure
+      ///       the stack can be unwound, and exceptions invoked.
       ///
       /// ### Examples
       ///
@@ -2207,24 +2189,24 @@ namespace RESULT_NAMESPACE_INTERNAL
       template <
         typename String,
         typename = typename std::enable_if<
-          (std::is_convertible<String, const std::string&>::value && std::is_copy_constructible<E>::value)>::type>
-      RESULT_CPP14_CONSTEXPR auto expect(String&& message) & -> typename std::add_lvalue_reference<T>::type;
+          (std::is_convertible<String, const std::string &>::value && std::is_copy_constructible<E>::value)>::type>
+      RESULT_CPP14_CONSTEXPR auto expect(String &&message) & -> typename std::add_lvalue_reference<T>::type;
       template <
         typename String,
         typename = typename std::enable_if<
-          (std::is_convertible<String, const std::string&>::value && std::is_move_constructible<E>::value)>::type>
-      RESULT_CPP14_CONSTEXPR auto expect(String&& message) && -> typename std::add_rvalue_reference<T>::type;
+          (std::is_convertible<String, const std::string &>::value && std::is_move_constructible<E>::value)>::type>
+      RESULT_CPP14_CONSTEXPR auto expect(String &&message) && -> typename std::add_rvalue_reference<T>::type;
       template <
         typename String,
         typename = typename std::enable_if<
-          (std::is_convertible<String, const std::string&>::value && std::is_copy_constructible<E>::value)>::type>
-      RESULT_CPP14_CONSTEXPR auto expect(String&& message) const& ->
+          (std::is_convertible<String, const std::string &>::value && std::is_copy_constructible<E>::value)>::type>
+      RESULT_CPP14_CONSTEXPR auto expect(String &&message) const & ->
         typename std::add_lvalue_reference<typename std::add_const<T>::type>::type;
       template <
         typename String,
         typename = typename std::enable_if<
-          (std::is_convertible<String, const std::string&>::value && std::is_copy_constructible<E>::value)>::type>
-      RESULT_CPP14_CONSTEXPR auto expect(String&& message) const&& ->
+          (std::is_convertible<String, const std::string &>::value && std::is_copy_constructible<E>::value)>::type>
+      RESULT_CPP14_CONSTEXPR auto expect(String &&message) const && ->
         typename std::add_rvalue_reference<typename std::add_const<T>::type>::type;
       /// \}
 
@@ -2248,12 +2230,12 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// assert(r.value_or(0) == 0);
       /// ```
       ///
-      /// \param default_value the value to use in case `*this` contains an error
-      /// \return the contained value or \p default_value
+      /// \param default_value the value to use in case `*this` contains an
+      /// error \return the contained value or \p default_value
       template <typename U>
-      RESULT_WARN_UNUSED constexpr auto value_or(U&& default_value) const& -> typename std::remove_reference<T>::type;
+      RESULT_WARN_UNUSED constexpr auto value_or(U &&default_value) const & -> typename std::remove_reference<T>::type;
       template <typename U>
-      RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto value_or(U&& default_value) && ->
+      RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto value_or(U &&default_value) && ->
         typename std::remove_reference<T>::type;
       /// \}
 
@@ -2275,8 +2257,8 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///
       /// \param default_error the error to use in case `*this` is empty
       /// \return the contained value or \p default_error
-      template <typename U> RESULT_WARN_UNUSED constexpr auto error_or(U&& default_error) const& -> error_type;
-      template <typename U> RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto error_or(U&& default_error) && -> error_type;
+      template <typename U> RESULT_WARN_UNUSED constexpr auto error_or(U &&default_error) const & -> error_type;
+      template <typename U> RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto error_or(U &&default_error) && -> error_type;
       /// \}
 
       //-------------------------------------------------------------------------
@@ -2300,7 +2282,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// \param value the value to return as a result
       /// \return a result of \p value if this contains a value
       template <typename U>
-      RESULT_WARN_UNUSED constexpr auto and_then(U&& value) const -> result<typename std::decay<U>::type, E>;
+      RESULT_WARN_UNUSED constexpr auto and_then(U &&value) const -> result<typename std::decay<U>::type, E>;
 
       /// \{
       /// \brief Invokes the function \p fn with the value of this result as
@@ -2330,9 +2312,9 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// \param fn the function to invoke with this
       /// \return The result of the function being called
       template <typename Fn>
-      RESULT_WARN_UNUSED constexpr auto flat_map(Fn&& fn) const& -> detail::invoke_result_t<Fn, const T&>;
+      RESULT_WARN_UNUSED constexpr auto flat_map(Fn &&fn) const & -> detail::invoke_result_t<Fn, const T &>;
       template <typename Fn>
-      RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto flat_map(Fn&& fn) && -> detail::invoke_result_t<Fn, T&&>;
+      RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto flat_map(Fn &&fn) && -> detail::invoke_result_t<Fn, T &&>;
       /// \}
 
       /// \{
@@ -2362,9 +2344,9 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// \param fn the function to invoke with this
       /// \return The result result of the function invoked
       template <typename Fn>
-      RESULT_WARN_UNUSED constexpr auto map(Fn&& fn) const& -> result<detail::invoke_result_t<Fn, const T&>, E>;
+      RESULT_WARN_UNUSED constexpr auto map(Fn &&fn) const & -> result<detail::invoke_result_t<Fn, const T &>, E>;
       template <typename Fn>
-      RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto map(Fn&& fn) && -> result<detail::invoke_result_t<Fn, T&&>, E>;
+      RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto map(Fn &&fn) && -> result<detail::invoke_result_t<Fn, T &&>, E>;
       /// \}
 
       /// \{
@@ -2372,8 +2354,8 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///        the argument
       ///
       /// If this result contains a value, the result of this function is that
-      /// value. Otherwise the function is called with that error and returns the
-      /// result as a result.
+      /// value. Otherwise the function is called with that error and returns
+      /// the result as a result.
       ///
       /// If this is called on an rvalue of `result` which contains a value,
       /// the returned `result` is constructed from an rvalue of that value.
@@ -2391,16 +2373,17 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// assert(r.map_error(to_string) == cpp::fail("42"));
       ///
       /// auto r = cpp::result<std::string,int>{};
-      /// auto s = r.map(std::string::size); // 's' contains 'result<size_t,int>'
+      /// auto s = r.map(std::string::size); // 's' contains
+      /// 'result<size_t,int>'
       /// ```
       ///
       /// \param fn the function to invoke with this
       /// \return The result result of the function invoked
       template <typename Fn>
-      RESULT_WARN_UNUSED constexpr auto map_error(Fn&& fn) const& -> result<T, detail::invoke_result_t<Fn, const E&>>;
+      RESULT_WARN_UNUSED constexpr auto map_error(Fn &&fn) const & -> result<T, detail::invoke_result_t<Fn, const E &>>;
       template <typename Fn>
       RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto
-        map_error(Fn&& fn) && -> result<T, detail::invoke_result_t<Fn, E&&>>;
+        map_error(Fn &&fn) && -> result<T, detail::invoke_result_t<Fn, E &&>>;
       /// \}
 
       /// \{
@@ -2431,9 +2414,9 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// \param fn the function to invoke with this
       /// \return The result of the function being called
       template <typename Fn>
-      RESULT_WARN_UNUSED constexpr auto flat_map_error(Fn&& fn) const& -> detail::invoke_result_t<Fn, const E&>;
+      RESULT_WARN_UNUSED constexpr auto flat_map_error(Fn &&fn) const & -> detail::invoke_result_t<Fn, const E &>;
       template <typename Fn>
-      RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto flat_map_error(Fn&& fn) && -> detail::invoke_result_t<Fn, E&&>;
+      RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto flat_map_error(Fn &&fn) && -> detail::invoke_result_t<Fn, E &&>;
       /// \}
 
       //-------------------------------------------------------------------------
@@ -2450,12 +2433,12 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// \brief Map implementations for void and non-void functions
       ///
       /// \param fn the function
-      template <typename Fn> constexpr auto map_impl(std::true_type, Fn&& fn) const& -> result<void, E>;
+      template <typename Fn> constexpr auto map_impl(std::true_type, Fn &&fn) const & -> result<void, E>;
       template <typename Fn>
-      constexpr auto map_impl(std::false_type, Fn&& fn) const& -> result<detail::invoke_result_t<Fn, const T&>, E>;
-      template <typename Fn> RESULT_CPP14_CONSTEXPR auto map_impl(std::true_type, Fn&& fn) && -> result<void, E>;
+      constexpr auto map_impl(std::false_type, Fn &&fn) const & -> result<detail::invoke_result_t<Fn, const T &>, E>;
+      template <typename Fn> RESULT_CPP14_CONSTEXPR auto map_impl(std::true_type, Fn &&fn) && -> result<void, E>;
       template <typename Fn>
-      RESULT_CPP14_CONSTEXPR auto map_impl(std::false_type, Fn&& fn) && -> result<detail::invoke_result_t<Fn, T&&>, E>;
+      RESULT_CPP14_CONSTEXPR auto map_impl(std::false_type, Fn &&fn) && -> result<detail::invoke_result_t<Fn, T &&>, E>;
       /// \}
     };
 
@@ -2468,8 +2451,7 @@ namespace RESULT_NAMESPACE_INTERNAL
     ///
     /// \tparam E the underlying error type
     /////////////////////////////////////////////////////////////////////////////
-    template <typename E> class RESULT_NODISCARD result<void, E>
-    {
+    template <typename E> class RESULT_NODISCARD result<void, E> {
       // Type requirements
 
       static_assert(
@@ -2478,7 +2460,8 @@ namespace RESULT_NAMESPACE_INTERNAL
       static_assert(!std::is_abstract<E>::value, "It is ill-formed for E to be abstract type");
       static_assert(
         !is_failure<typename std::decay<E>::type>::value,
-        "It is ill-formed for E to be a (possibly CV-qualified) 'failure' type");
+        "It is ill-formed for E to be a (possibly CV-qualified) 'failure' "
+        "type");
       static_assert(
         !std::is_reference<E>::value,
         "It is ill-formed for E to be a reference type. "
@@ -2536,7 +2519,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// ```
       ///
       /// \param other the result to copy
-      constexpr result(const result& other) = default;
+      constexpr result(const result &other) = default;
 
       /// \brief Move constructs a result
       ///
@@ -2559,7 +2542,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// ```
       ///
       /// \param other the result to move
-      constexpr result(result&& other) = default;
+      constexpr result(result &&other) = default;
 
       /// \brief Converting copy constructor
       ///
@@ -2585,7 +2568,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///
       /// \param other the other type to convert
       template <typename U, typename E2, typename = typename std::enable_if<std::is_constructible<E, E2>::value>::type>
-      explicit result(const result<U, E2>& other) noexcept(std::is_nothrow_constructible<E, const E2&>::value);
+      explicit result(const result<U, E2> &other) noexcept(std::is_nothrow_constructible<E, const E2 &>::value);
 
       /// \brief Converting move constructor
       ///
@@ -2610,7 +2593,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///
       /// \param other the other type to convert
       template <typename U, typename E2, typename = typename std::enable_if<std::is_constructible<E, E2>::value>::type>
-      explicit result(result<U, E2>&& other) noexcept(std::is_nothrow_constructible<E, E2&&>::value);
+      explicit result(result<U, E2> &&other) noexcept(std::is_nothrow_constructible<E, E2 &&>::value);
 
       //-------------------------------------------------------------------------
 
@@ -2647,7 +2630,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///
       /// \param args the arguments to pass to `E`'s constructor
       template <typename... Args, typename = typename std::enable_if<std::is_constructible<E, Args...>::value>::type>
-      constexpr explicit result(in_place_error_t, Args&&... args) noexcept(
+      constexpr explicit result(in_place_error_t, Args &&...args) noexcept(
         std::is_nothrow_constructible<E, Args...>::value);
 
       /// \brief Constructs a result object that contains an error
@@ -2672,8 +2655,8 @@ namespace RESULT_NAMESPACE_INTERNAL
       template <
         typename U,
         typename... Args,
-        typename = typename std::enable_if<std::is_constructible<E, std::initializer_list<U>&, Args...>::value>::type>
-      constexpr explicit result(in_place_error_t, std::initializer_list<U> ilist, Args&&... args) noexcept(
+        typename = typename std::enable_if<std::is_constructible<E, std::initializer_list<U> &, Args...>::value>::type>
+      constexpr explicit result(in_place_error_t, std::initializer_list<U> ilist, Args &&...args) noexcept(
         std::is_nothrow_constructible<E, std::initializer_list<U>, Args...>::value);
 
       //-------------------------------------------------------------------------
@@ -2697,10 +2680,11 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// ```
       ///
       /// \param e the failure error
-      template <typename E2, typename = typename std::enable_if<std::is_constructible<E, const E2&>::value>::type>
-      constexpr /* implicit */ result(const failure<E2>& e) noexcept(std::is_nothrow_constructible<E, const E2&>::value);
-      template <typename E2, typename = typename std::enable_if<std::is_constructible<E, E2&&>::value>::type>
-      constexpr /* implicit */ result(failure<E2>&& e) noexcept(std::is_nothrow_constructible<E, E2&&>::value);
+      template <typename E2, typename = typename std::enable_if<std::is_constructible<E, const E2 &>::value>::type>
+      constexpr /* implicit */ result(const failure<E2> &e) noexcept(
+        std::is_nothrow_constructible<E, const E2 &>::value);
+      template <typename E2, typename = typename std::enable_if<std::is_constructible<E, E2 &&>::value>::type>
+      constexpr /* implicit */ result(failure<E2> &&e) noexcept(std::is_nothrow_constructible<E, E2 &&>::value);
       /// \}
 
       //-------------------------------------------------------------------------
@@ -2709,8 +2693,8 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///
       /// \note The function does not participate in overload resolution unless
       ///       - `std::is_nothrow_copy_constructible_v<E>` is `true`
-      ///       this restriction guarantees that no 'valueless_by_exception` state
-      ///       may occur.
+      ///       this restriction guarantees that no 'valueless_by_exception`
+      ///       state may occur.
       ///
       /// \note This assignment operator is defined as trivial if the following
       ///       conditions are all `true`:
@@ -2719,14 +2703,14 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///       - `std::is_trivially_destructible<E>::value`
       ///
       /// \param other the other result to copy
-      auto operator=(const result& other) -> result& = default;
+      auto operator=(const result &other) -> result & = default;
 
       /// \brief Move assigns the result stored in \p other
       ///
       /// \note The function does not participate in overload resolution unless
       ///       - `std::is_nothrow_copy_constructible_v<E>` is `true`
-      ///       this restriction guarantees that no 'valueless_by_exception` state
-      ///       may occur.
+      ///       this restriction guarantees that no 'valueless_by_exception`
+      ///       state may occur.
       ///
       /// \note This assignment operator is defined as trivial if the following
       ///       conditions are all `true`:
@@ -2735,7 +2719,7 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///       - `std::is_trivially_destructible<E>::value`
       ///
       /// \param other the other result to copy
-      auto operator=(result&& other) -> result& = default;
+      auto operator=(result &&other) -> result & = default;
 
       /// \brief Copy-converts the state of \p other
       ///
@@ -2757,8 +2741,9 @@ namespace RESULT_NAMESPACE_INTERNAL
       template <
         typename E2,
         typename = typename std::enable_if<
-          std::is_nothrow_constructible<E, const E2&>::value && std::is_assignable<E&, const E2&>::value>::type>
-      auto operator=(const result<void, E2>& other) noexcept(std::is_nothrow_assignable<E, const E2&>::value) -> result&;
+          std::is_nothrow_constructible<E, const E2 &>::value && std::is_assignable<E &, const E2 &>::value>::type>
+      auto operator=(const result<void, E2> &other) noexcept(std::is_nothrow_assignable<E, const E2 &>::value)
+        -> result &;
 
       /// \brief Move-converts the state of \p other
       ///
@@ -2780,15 +2765,15 @@ namespace RESULT_NAMESPACE_INTERNAL
       template <
         typename E2,
         typename = typename std::enable_if<
-          std::is_nothrow_constructible<E, E2&&>::value && std::is_assignable<E&, E2&&>::value>::type>
-      auto operator=(result<void, E2>&& other) noexcept(std::is_nothrow_assignable<E, E2&&>::value) -> result&;
+          std::is_nothrow_constructible<E, E2 &&>::value && std::is_assignable<E &, E2 &&>::value>::type>
+      auto operator=(result<void, E2> &&other) noexcept(std::is_nothrow_assignable<E, E2 &&>::value) -> result &;
 
       /// \{
       /// \brief Perfect-forwarded assignment
       ///
       /// Depending on whether `*this` contains an error before the call, the
-      /// contained error is either direct-initialized via forwarding the error,
-      /// or assigned from forwarding the error
+      /// contained error is either direct-initialized via forwarding the
+      /// error, or assigned from forwarding the error
       ///
       /// \note The function does not participate in overload resolution unless
       ///       - `std::is_nothrow_constructible_v<E, E2>` is `true`, and
@@ -2798,12 +2783,12 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// \return reference to `(*this)`
       template <
         typename E2,
-        typename = typename std::enable_if<detail::result_is_failure_assignable<E, const E2&>::value>::type>
-      auto operator=(const failure<E2>& other) noexcept(std::is_nothrow_assignable<E, const E2&>::value) -> result&;
+        typename = typename std::enable_if<detail::result_is_failure_assignable<E, const E2 &>::value>::type>
+      auto operator=(const failure<E2> &other) noexcept(std::is_nothrow_assignable<E, const E2 &>::value) -> result &;
       template <
         typename E2,
-        typename = typename std::enable_if<detail::result_is_failure_assignable<E, E2&&>::value>::type>
-      auto operator=(failure<E2>&& other) noexcept(std::is_nothrow_assignable<E, E2&&>::value) -> result&;
+        typename = typename std::enable_if<detail::result_is_failure_assignable<E, E2 &&>::value>::type>
+      auto operator=(failure<E2> &&other) noexcept(std::is_nothrow_assignable<E, E2 &&>::value) -> result &;
       /// \}
 
       //-------------------------------------------------------------------------
@@ -2848,12 +2833,12 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// \{
       /// \brief Throws an exception if `(*this)` is in an error state
       ///
-      /// This function exists for symmetry with `cpp::result<T,E>` objects where
-      /// `T` contains a value.
+      /// This function exists for symmetry with `cpp::result<T,E>` objects
+      /// where `T` contains a value.
       ///
       /// If this contains an error, an exception is thrown containing the
-      /// underlying error. The error is consumed propagating the same constness
-      /// and refness of this result.
+      /// underlying error. The error is consumed propagating the same
+      /// constness and refness of this result.
       ///
       /// ### Examples
       ///
@@ -2865,7 +2850,8 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// auto r = cpp::result<void,std::unique_ptr<int>>{
       ///   cpp::fail(std::make_unique<int>(42))
       /// };
-      /// std::move(r).value(); // throws bad_result_access<std::unique_ptr<int>>
+      /// std::move(r).value(); // throws
+      /// bad_result_access<std::unique_ptr<int>>
       ///
       /// try {
       ///   auto r = cpp::result<void,int>{ cpp::fail(42) }.value();
@@ -2876,13 +2862,13 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///
       /// \throws bad_result_access<E> if `*this` does not contain a value.
       RESULT_CPP14_CONSTEXPR auto value() && -> void;
-      RESULT_CPP14_CONSTEXPR auto value() const& -> void;
+      RESULT_CPP14_CONSTEXPR auto value() const & -> void;
       /// \}
 
       /// \{
       /// \copydoc result<T,E>::error
       RESULT_WARN_UNUSED
-      constexpr auto error() const& noexcept(
+      constexpr auto error() const & noexcept(
         std::is_nothrow_constructible<E>::value && std::is_nothrow_copy_constructible<E>::value) -> E;
       RESULT_WARN_UNUSED
       RESULT_CPP14_CONSTEXPR auto error() && noexcept(
@@ -2894,13 +2880,13 @@ namespace RESULT_NAMESPACE_INTERNAL
       template <
         typename String,
         typename = typename std::enable_if<
-          (std::is_convertible<String, const std::string&>::value && std::is_copy_constructible<E>::value)>::type>
-      RESULT_CPP14_CONSTEXPR auto expect(String&& message) const& -> void;
+          (std::is_convertible<String, const std::string &>::value && std::is_copy_constructible<E>::value)>::type>
+      RESULT_CPP14_CONSTEXPR auto expect(String &&message) const & -> void;
       template <
         typename String,
         typename = typename std::enable_if<
-          (std::is_convertible<String, const std::string&>::value && std::is_move_constructible<E>::value)>::type>
-      RESULT_CPP14_CONSTEXPR auto expect(String&& message) && -> void;
+          (std::is_convertible<String, const std::string &>::value && std::is_move_constructible<E>::value)>::type>
+      RESULT_CPP14_CONSTEXPR auto expect(String &&message) && -> void;
       /// \}
 
       //-------------------------------------------------------------------------
@@ -2909,15 +2895,15 @@ namespace RESULT_NAMESPACE_INTERNAL
     public:
       /// \{
       /// \copydoc result<T,E>::error_or
-      template <typename U> RESULT_WARN_UNUSED constexpr auto error_or(U&& default_error) const& -> error_type;
-      template <typename U> RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto error_or(U&& default_error) && -> error_type;
+      template <typename U> RESULT_WARN_UNUSED constexpr auto error_or(U &&default_error) const & -> error_type;
+      template <typename U> RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto error_or(U &&default_error) && -> error_type;
       /// \}
 
       //-------------------------------------------------------------------------
 
       /// \copydoc result<T,E>::and_then
       template <typename U>
-      RESULT_WARN_UNUSED constexpr auto and_then(U&& value) const -> result<typename std::decay<U>::type, E>;
+      RESULT_WARN_UNUSED constexpr auto and_then(U &&value) const -> result<typename std::decay<U>::type, E>;
 
       /// \{
       /// \brief Invokes the function \p fn if `(*this)` contains no value
@@ -2945,9 +2931,9 @@ namespace RESULT_NAMESPACE_INTERNAL
       ///
       /// \param fn the function to invoke with this
       /// \return The result of the function being called
-      template <typename Fn> RESULT_WARN_UNUSED constexpr auto flat_map(Fn&& fn) const& -> detail::invoke_result_t<Fn>;
+      template <typename Fn> RESULT_WARN_UNUSED constexpr auto flat_map(Fn &&fn) const & -> detail::invoke_result_t<Fn>;
       template <typename Fn>
-      RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto flat_map(Fn&& fn) && -> detail::invoke_result_t<Fn>;
+      RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto flat_map(Fn &&fn) && -> detail::invoke_result_t<Fn>;
       /// \}
 
       /// \{
@@ -2976,25 +2962,25 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// \param fn the function to invoke with this
       /// \return The result result of the function invoked
       template <typename Fn>
-      RESULT_WARN_UNUSED constexpr auto map(Fn&& fn) const& -> result<detail::invoke_result_t<Fn>, E>;
+      RESULT_WARN_UNUSED constexpr auto map(Fn &&fn) const & -> result<detail::invoke_result_t<Fn>, E>;
       template <typename Fn>
-      RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto map(Fn&& fn) && -> result<detail::invoke_result_t<Fn>, E>;
+      RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto map(Fn &&fn) && -> result<detail::invoke_result_t<Fn>, E>;
       /// \}
 
       /// \{
       /// \copydoc result<T,E>::map_error
       template <typename Fn>
-      constexpr auto map_error(Fn&& fn) const& -> result<void, detail::invoke_result_t<Fn, const E&>>;
+      constexpr auto map_error(Fn &&fn) const & -> result<void, detail::invoke_result_t<Fn, const E &>>;
       template <typename Fn>
-      RESULT_CPP14_CONSTEXPR auto map_error(Fn&& fn) && -> result<void, detail::invoke_result_t<Fn, E&&>>;
+      RESULT_CPP14_CONSTEXPR auto map_error(Fn &&fn) && -> result<void, detail::invoke_result_t<Fn, E &&>>;
       /// \}
 
       /// \{
       /// \copydoc result<T,E>::flat_map_error
       template <typename Fn>
-      RESULT_WARN_UNUSED constexpr auto flat_map_error(Fn&& fn) const& -> detail::invoke_result_t<Fn, const E&>;
+      RESULT_WARN_UNUSED constexpr auto flat_map_error(Fn &&fn) const & -> detail::invoke_result_t<Fn, const E &>;
       template <typename Fn>
-      RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto flat_map_error(Fn&& fn) && -> detail::invoke_result_t<Fn, E&&>;
+      RESULT_WARN_UNUSED RESULT_CPP14_CONSTEXPR auto flat_map_error(Fn &&fn) && -> detail::invoke_result_t<Fn, E &&>;
       /// \}
 
       //-------------------------------------------------------------------------
@@ -3011,12 +2997,12 @@ namespace RESULT_NAMESPACE_INTERNAL
       /// \brief Map implementations for void and non-void functions
       ///
       /// \param fn the function
-      template <typename Fn> constexpr auto map_impl(std::true_type, Fn&& fn) const& -> result<void, E>;
+      template <typename Fn> constexpr auto map_impl(std::true_type, Fn &&fn) const & -> result<void, E>;
       template <typename Fn>
-      constexpr auto map_impl(std::false_type, Fn&& fn) const& -> result<detail::invoke_result_t<Fn>, E>;
-      template <typename Fn> RESULT_CPP14_CONSTEXPR auto map_impl(std::true_type, Fn&& fn) && -> result<void, E>;
+      constexpr auto map_impl(std::false_type, Fn &&fn) const & -> result<detail::invoke_result_t<Fn>, E>;
+      template <typename Fn> RESULT_CPP14_CONSTEXPR auto map_impl(std::true_type, Fn &&fn) && -> result<void, E>;
       template <typename Fn>
-      RESULT_CPP14_CONSTEXPR auto map_impl(std::false_type, Fn&& fn) && -> result<detail::invoke_result_t<Fn>, E>;
+      RESULT_CPP14_CONSTEXPR auto map_impl(std::false_type, Fn &&fn) && -> result<detail::invoke_result_t<Fn>, E>;
       /// \}
     };
 
@@ -3029,86 +3015,86 @@ namespace RESULT_NAMESPACE_INTERNAL
     //---------------------------------------------------------------------------
 
     template <typename T1, typename E1, typename T2, typename E2>
-    constexpr auto operator==(const result<T1, E1>& lhs, const result<T2, E2>& rhs) noexcept -> bool;
+    constexpr auto operator==(const result<T1, E1> &lhs, const result<T2, E2> &rhs) noexcept -> bool;
     template <typename T1, typename E1, typename T2, typename E2>
-    constexpr auto operator!=(const result<T1, E1>& lhs, const result<T2, E2>& rhs) noexcept -> bool;
+    constexpr auto operator!=(const result<T1, E1> &lhs, const result<T2, E2> &rhs) noexcept -> bool;
     template <typename T1, typename E1, typename T2, typename E2>
-    constexpr auto operator>=(const result<T1, E1>& lhs, const result<T2, E2>& rhs) noexcept -> bool;
+    constexpr auto operator>=(const result<T1, E1> &lhs, const result<T2, E2> &rhs) noexcept -> bool;
     template <typename T1, typename E1, typename T2, typename E2>
-    constexpr auto operator<=(const result<T1, E1>& lhs, const result<T2, E2>& rhs) noexcept -> bool;
+    constexpr auto operator<=(const result<T1, E1> &lhs, const result<T2, E2> &rhs) noexcept -> bool;
     template <typename T1, typename E1, typename T2, typename E2>
-    constexpr auto operator>(const result<T1, E1>& lhs, const result<T2, E2>& rhs) noexcept -> bool;
+    constexpr auto operator>(const result<T1, E1> &lhs, const result<T2, E2> &rhs) noexcept -> bool;
     template <typename T1, typename E1, typename T2, typename E2>
-    constexpr auto operator<(const result<T1, E1>& lhs, const result<T2, E2>& rhs) noexcept -> bool;
+    constexpr auto operator<(const result<T1, E1> &lhs, const result<T2, E2> &rhs) noexcept -> bool;
 
     //---------------------------------------------------------------------------
 
     template <typename E1, typename E2>
-    constexpr auto operator==(const result<void, E1>& lhs, const result<void, E2>& rhs) noexcept -> bool;
+    constexpr auto operator==(const result<void, E1> &lhs, const result<void, E2> &rhs) noexcept -> bool;
     template <typename E1, typename E2>
-    constexpr auto operator!=(const result<void, E1>& lhs, const result<void, E2>& rhs) noexcept -> bool;
+    constexpr auto operator!=(const result<void, E1> &lhs, const result<void, E2> &rhs) noexcept -> bool;
     template <typename E1, typename E2>
-    constexpr auto operator>=(const result<void, E1>& lhs, const result<void, E2>& rhs) noexcept -> bool;
+    constexpr auto operator>=(const result<void, E1> &lhs, const result<void, E2> &rhs) noexcept -> bool;
     template <typename E1, typename E2>
-    constexpr auto operator<=(const result<void, E1>& lhs, const result<void, E2>& rhs) noexcept -> bool;
+    constexpr auto operator<=(const result<void, E1> &lhs, const result<void, E2> &rhs) noexcept -> bool;
     template <typename E1, typename E2>
-    constexpr auto operator>(const result<void, E1>& lhs, const result<void, E2>& rhs) noexcept -> bool;
+    constexpr auto operator>(const result<void, E1> &lhs, const result<void, E2> &rhs) noexcept -> bool;
     template <typename E1, typename E2>
-    constexpr auto operator<(const result<void, E1>& lhs, const result<void, E2>& rhs) noexcept -> bool;
+    constexpr auto operator<(const result<void, E1> &lhs, const result<void, E2> &rhs) noexcept -> bool;
 
     //---------------------------------------------------------------------------
 
     template <typename T, typename E, typename U, typename = typename std::enable_if<!std::is_same<T, void>::value>::type>
-    constexpr auto operator==(const result<T, E>& exp, const U& value) noexcept -> bool;
+    constexpr auto operator==(const result<T, E> &exp, const U &value) noexcept -> bool;
     template <typename T, typename U, typename E, typename = typename std::enable_if<!std::is_same<U, void>::value>::type>
-    constexpr auto operator==(const T& value, const result<U, E>& exp) noexcept -> bool;
+    constexpr auto operator==(const T &value, const result<U, E> &exp) noexcept -> bool;
     template <typename T, typename E, typename U, typename = typename std::enable_if<!std::is_same<T, void>::value>::type>
-    constexpr auto operator!=(const result<T, E>& exp, const U& value) noexcept -> bool;
+    constexpr auto operator!=(const result<T, E> &exp, const U &value) noexcept -> bool;
     template <typename T, typename U, typename E, typename = typename std::enable_if<!std::is_same<U, void>::value>::type>
-    constexpr auto operator!=(const T& value, const result<U, E>& exp) noexcept -> bool;
+    constexpr auto operator!=(const T &value, const result<U, E> &exp) noexcept -> bool;
     template <typename T, typename E, typename U, typename = typename std::enable_if<!std::is_same<T, void>::value>::type>
-    constexpr auto operator<=(const result<T, E>& exp, const U& value) noexcept -> bool;
+    constexpr auto operator<=(const result<T, E> &exp, const U &value) noexcept -> bool;
     template <typename T, typename U, typename E, typename = typename std::enable_if<!std::is_same<U, void>::value>::type>
-    constexpr auto operator<=(const T& value, const result<U, E>& exp) noexcept -> bool;
+    constexpr auto operator<=(const T &value, const result<U, E> &exp) noexcept -> bool;
     template <typename T, typename E, typename U, typename = typename std::enable_if<!std::is_same<T, void>::value>::type>
-    constexpr auto operator>=(const result<T, E>& exp, const U& value) noexcept -> bool;
+    constexpr auto operator>=(const result<T, E> &exp, const U &value) noexcept -> bool;
     template <typename T, typename U, typename E, typename = typename std::enable_if<!std::is_same<U, void>::value>::type>
-    constexpr auto operator>=(const T& value, const result<U, E>& exp) noexcept -> bool;
+    constexpr auto operator>=(const T &value, const result<U, E> &exp) noexcept -> bool;
     template <typename T, typename E, typename U, typename = typename std::enable_if<!std::is_same<T, void>::value>::type>
-    constexpr auto operator<(const result<T, E>& exp, const U& value) noexcept -> bool;
+    constexpr auto operator<(const result<T, E> &exp, const U &value) noexcept -> bool;
     template <typename T, typename U, typename E, typename = typename std::enable_if<!std::is_same<U, void>::value>::type>
-    constexpr auto operator<(const T& value, const result<U, E>& exp) noexcept -> bool;
+    constexpr auto operator<(const T &value, const result<U, E> &exp) noexcept -> bool;
     template <typename T, typename E, typename U, typename = typename std::enable_if<!std::is_same<T, void>::value>::type>
-    constexpr auto operator>(const result<T, E>& exp, const U& value) noexcept -> bool;
+    constexpr auto operator>(const result<T, E> &exp, const U &value) noexcept -> bool;
     template <typename T, typename U, typename E, typename = typename std::enable_if<!std::is_same<U, void>::value>::type>
-    constexpr auto operator>(const T& value, const result<U, E>& exp) noexcept -> bool;
+    constexpr auto operator>(const T &value, const result<U, E> &exp) noexcept -> bool;
 
     //---------------------------------------------------------------------------
 
     template <typename T, typename E, typename U>
-    constexpr auto operator==(const result<T, E>& exp, const failure<U>& value) noexcept -> bool;
+    constexpr auto operator==(const result<T, E> &exp, const failure<U> &value) noexcept -> bool;
     template <typename T, typename U, typename E>
-    constexpr auto operator==(const failure<T>& value, const result<E, U>& exp) noexcept -> bool;
+    constexpr auto operator==(const failure<T> &value, const result<E, U> &exp) noexcept -> bool;
     template <typename T, typename E, typename U>
-    constexpr auto operator!=(const result<T, E>& exp, const failure<U>& value) noexcept -> bool;
+    constexpr auto operator!=(const result<T, E> &exp, const failure<U> &value) noexcept -> bool;
     template <typename T, typename U, typename E>
-    constexpr auto operator!=(const failure<T>& value, const result<E, U>& exp) noexcept -> bool;
+    constexpr auto operator!=(const failure<T> &value, const result<E, U> &exp) noexcept -> bool;
     template <typename T, typename E, typename U>
-    constexpr auto operator<=(const result<T, E>& exp, const failure<U>& value) noexcept -> bool;
+    constexpr auto operator<=(const result<T, E> &exp, const failure<U> &value) noexcept -> bool;
     template <typename T, typename U, typename E>
-    constexpr auto operator<=(const failure<T>& value, const result<E, U>& exp) noexcept -> bool;
+    constexpr auto operator<=(const failure<T> &value, const result<E, U> &exp) noexcept -> bool;
     template <typename T, typename E, typename U>
-    constexpr auto operator>=(const result<T, E>& exp, const failure<U>& value) noexcept -> bool;
+    constexpr auto operator>=(const result<T, E> &exp, const failure<U> &value) noexcept -> bool;
     template <typename T, typename U, typename E>
-    constexpr auto operator>=(const failure<T>& value, const result<E, U>& exp) noexcept -> bool;
+    constexpr auto operator>=(const failure<T> &value, const result<E, U> &exp) noexcept -> bool;
     template <typename T, typename E, typename U>
-    constexpr auto operator<(const result<T, E>& exp, const failure<U>& value) noexcept -> bool;
+    constexpr auto operator<(const result<T, E> &exp, const failure<U> &value) noexcept -> bool;
     template <typename T, typename U, typename E>
-    constexpr auto operator<(const failure<T>& value, const result<E, U>& exp) noexcept -> bool;
+    constexpr auto operator<(const failure<T> &value, const result<E, U> &exp) noexcept -> bool;
     template <typename T, typename E, typename U>
-    constexpr auto operator>(const result<T, E>& exp, const failure<U>& value) noexcept -> bool;
+    constexpr auto operator>(const result<T, E> &exp, const failure<U> &value) noexcept -> bool;
     template <typename T, typename U, typename E>
-    constexpr auto operator>(const failure<T>& value, const result<E, U>& exp) noexcept -> bool;
+    constexpr auto operator>(const failure<T> &value, const result<E, U> &exp) noexcept -> bool;
 
     //---------------------------------------------------------------------------
     // Utilities
@@ -3120,7 +3106,7 @@ namespace RESULT_NAMESPACE_INTERNAL
     /// \param lhs the left result
     /// \param rhs the right result
     template <typename T, typename E>
-    auto swap(result<T, E>& lhs, result<T, E>& rhs)
+    auto swap(result<T, E> &lhs, result<T, E> &rhs)
 #if __cplusplus >= 201703L
       noexcept(
         std::is_nothrow_move_constructible<result<T, E>>::value && std::is_nothrow_move_assignable<result<T, E>>::value
@@ -3131,7 +3117,7 @@ namespace RESULT_NAMESPACE_INTERNAL
 #endif
         -> void;
     template <typename E>
-    auto swap(result<void, E>& lhs, result<void, E>& rhs)
+    auto swap(result<void, E> &lhs, result<void, E> &rhs)
 #if __cplusplus >= 201703L
       noexcept(
         std::is_nothrow_move_constructible<result<void, E>>::value
@@ -3147,23 +3133,18 @@ namespace RESULT_NAMESPACE_INTERNAL
   } // namespace bitwizeshift
 } // namespace RESULT_NAMESPACE_INTERNAL
 
-namespace std
-{
+namespace std {
 
-  template <typename T, typename E> struct hash<::RESULT_NS_IMPL::result<T, E>>
-  {
-    auto operator()(const RESULT_NS_IMPL::result<T, E>& x) const -> std::size_t
-    {
+  template <typename T, typename E> struct hash<::RESULT_NS_IMPL::result<T, E>> {
+    auto operator()(const RESULT_NS_IMPL::result<T, E> &x) const -> std::size_t {
       if (x.has_value())
         return std::hash<T>{}(*x) + 1; // add '1' to differentiate from error case
       return std::hash<E>{}(::RESULT_NS_IMPL::detail::extract_error(x));
     }
   };
 
-  template <typename E> struct hash<::RESULT_NS_IMPL::result<void, E>>
-  {
-    auto operator()(const RESULT_NS_IMPL::result<void, E>& x) const -> std::size_t
-    {
+  template <typename E> struct hash<::RESULT_NS_IMPL::result<void, E>> {
+    auto operator()(const RESULT_NS_IMPL::result<void, E> &x) const -> std::size_t {
       if (x.has_value())
         return 0;
       return std::hash<E>{}(::RESULT_NS_IMPL::detail::extract_error(x));
@@ -3184,52 +3165,46 @@ namespace std
 
 template <typename E>
 template <typename E2, typename>
-inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::bad_result_access<E>::bad_result_access(E2&& error)
-  : logic_error{"error attempting to access value from result containing error"}
-  , m_error(detail::forward<E2>(error))
-{}
+inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::bad_result_access<E>::bad_result_access(E2 &&error)
+  : logic_error{"error attempting to access value from result containing "
+                "error"}
+  , m_error(detail::forward<E2>(error)) {}
 
 template <typename E>
 template <typename E2, typename>
-inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::bad_result_access<E>::bad_result_access(const char* what_arg, E2&& error)
+inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::bad_result_access<E>::bad_result_access(const char *what_arg, E2 &&error)
   : logic_error{what_arg}
-  , m_error(detail::forward<E2>(error))
-{}
+  , m_error(detail::forward<E2>(error)) {}
 
 template <typename E>
 template <typename E2, typename>
 inline RESULT_INLINE_VISIBILITY
-  RESULT_NS_IMPL::bad_result_access<E>::bad_result_access(const std::string& what_arg, E2&& error)
+  RESULT_NS_IMPL::bad_result_access<E>::bad_result_access(const std::string &what_arg, E2 &&error)
   : logic_error{what_arg}
-  , m_error(detail::forward<E2>(error))
-{}
+  , m_error(detail::forward<E2>(error)) {}
 
 //-----------------------------------------------------------------------------
 // Observers
 //-----------------------------------------------------------------------------
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::bad_result_access<E>::error() & noexcept -> E&
-{
+inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::bad_result_access<E>::error() & noexcept -> E & {
   return m_error;
 }
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::bad_result_access<E>::error() && noexcept -> E&&
-{
-  return static_cast<E&&>(m_error);
+inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::bad_result_access<E>::error() && noexcept -> E && {
+  return static_cast<E &&>(m_error);
 }
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::bad_result_access<E>::error() const& noexcept -> const E&
-{
+inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::bad_result_access<E>::error() const & noexcept -> const E & {
   return m_error;
 }
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::bad_result_access<E>::error() const&& noexcept -> const E&&
-{
-  return static_cast<const E&&>(m_error);
+inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::bad_result_access<E>::error() const && noexcept -> const E && {
+  return static_cast<const E &&>(m_error);
 }
 
 #endif
@@ -3244,59 +3219,52 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::bad_result_access<E>::error
 
 template <typename E>
 template <typename... Args, typename>
-inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::failure<E>::failure(in_place_t, Args&&... args) noexcept(
+inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::failure<E>::failure(in_place_t, Args &&...args) noexcept(
   std::is_nothrow_constructible<E, Args...>::value)
-  : m_failure(detail::forward<Args>(args)...)
-{}
+  : m_failure(detail::forward<Args>(args)...) {}
 
 template <typename E>
 template <typename U, typename... Args, typename>
 inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::failure<E>::failure(
   in_place_t,
   std::initializer_list<U> ilist,
-  Args&&... args) noexcept(std::is_nothrow_constructible<E, std::initializer_list<U>, Args...>::value)
-  : m_failure(ilist, detail::forward<Args>(args)...)
-{}
+  Args &&...args) noexcept(std::is_nothrow_constructible<E, std::initializer_list<U>, Args...>::value)
+  : m_failure(ilist, detail::forward<Args>(args)...) {}
 
 template <typename E>
 template <
   typename E2,
   typename std::enable_if<RESULT_NS_IMPL::detail::failure_is_explicit_value_convertible<E, E2>::value, int>::type>
-inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::failure<E>::failure(E2&& error) noexcept(
+inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::failure<E>::failure(E2 &&error) noexcept(
   std::is_nothrow_constructible<E, E2>::value)
-  : m_failure(detail::forward<E2>(error))
-{}
+  : m_failure(detail::forward<E2>(error)) {}
 
 template <typename E>
 template <
   typename E2,
   typename std::enable_if<RESULT_NS_IMPL::detail::failure_is_implicit_value_convertible<E, E2>::value, int>::type>
-inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::failure<E>::failure(E2&& error) noexcept(
+inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::failure<E>::failure(E2 &&error) noexcept(
   std::is_nothrow_constructible<E, E2>::value)
-  : m_failure(detail::forward<E2>(error))
-{}
+  : m_failure(detail::forward<E2>(error)) {}
 
 template <typename E>
 template <typename E2, typename>
-inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::failure<E>::failure(const failure<E2>& other) noexcept(
-  std::is_nothrow_constructible<E, const E2&>::value)
-  : m_failure(other.error())
-{}
+inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::failure<E>::failure(const failure<E2> &other) noexcept(
+  std::is_nothrow_constructible<E, const E2 &>::value)
+  : m_failure(other.error()) {}
 
 template <typename E>
 template <typename E2, typename>
-inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::failure<E>::failure(failure<E2>&& other) noexcept(
-  std::is_nothrow_constructible<E, E2&&>::value)
-  : m_failure(static_cast<failure<E2>&&>(other).error())
-{}
+inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::failure<E>::failure(failure<E2> &&other) noexcept(
+  std::is_nothrow_constructible<E, E2 &&>::value)
+  : m_failure(static_cast<failure<E2> &&>(other).error()) {}
 
 //-----------------------------------------------------------------------------
 
 template <typename E>
 template <typename E2, typename>
-inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::failure<E>::operator=(E2&& error) noexcept(
-  std::is_nothrow_assignable<E, E2>::value || std::is_lvalue_reference<E>::value) -> failure&
-{
+inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::failure<E>::operator=(E2 &&error) noexcept(
+  std::is_nothrow_assignable<E, E2>::value || std::is_lvalue_reference<E>::value) -> failure & {
   m_failure = detail::forward<E2>(error);
 
   return (*this);
@@ -3305,8 +3273,7 @@ inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::fail
 template <typename E>
 template <typename E2, typename>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::failure<E>::operator=(
-  const failure<E2>& other) noexcept(std::is_nothrow_assignable<E, const E2&>::value) -> failure&
-{
+  const failure<E2> &other) noexcept(std::is_nothrow_assignable<E, const E2 &>::value) -> failure & {
   m_failure = other.error();
 
   return (*this);
@@ -3315,9 +3282,8 @@ inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::fail
 template <typename E>
 template <typename E2, typename>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::failure<E>::operator=(
-  failure<E2>&& other) noexcept(std::is_nothrow_assignable<E, E2&&>::value) -> failure&
-{
-  m_failure = static_cast<failure<E2>&&>(other).error();
+  failure<E2> &&other) noexcept(std::is_nothrow_assignable<E, E2 &&>::value) -> failure & {
+  m_failure = static_cast<failure<E2> &&>(other).error();
 
   return (*this);
 }
@@ -3328,31 +3294,27 @@ inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::fail
 
 template <typename E>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::failure<E>::error() & noexcept ->
-  typename std::add_lvalue_reference<E>::type
-{
+  typename std::add_lvalue_reference<E>::type {
   return m_failure;
 }
 
 template <typename E>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::failure<E>::error() && noexcept ->
-  typename std::add_rvalue_reference<E>::type
-{
+  typename std::add_rvalue_reference<E>::type {
   using reference = typename std::add_rvalue_reference<E>::type;
 
   return static_cast<reference>(m_failure);
 }
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::failure<E>::error() const& noexcept ->
-  typename std::add_lvalue_reference<typename std::add_const<E>::type>::type
-{
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::failure<E>::error() const & noexcept ->
+  typename std::add_lvalue_reference<typename std::add_const<E>::type>::type {
   return m_failure;
 }
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::failure<E>::error() const&& noexcept ->
-  typename std::add_rvalue_reference<typename std::add_const<E>::type>::type
-{
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::failure<E>::error() const && noexcept ->
+  typename std::add_rvalue_reference<typename std::add_const<E>::type>::type {
   using reference = typename std::add_rvalue_reference<typename std::add_const<E>::type>::type;
 
   return static_cast<reference>(m_failure);
@@ -3368,43 +3330,37 @@ inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::failure<E>::error
 
 template <typename E1, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator==(const failure<E1>& lhs, const failure<E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator==(const failure<E1> &lhs, const failure<E2> &rhs) noexcept -> bool {
   return lhs.error() == rhs.error();
 }
 
 template <typename E1, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator!=(const failure<E1>& lhs, const failure<E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator!=(const failure<E1> &lhs, const failure<E2> &rhs) noexcept -> bool {
   return lhs.error() != rhs.error();
 }
 
 template <typename E1, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator<(const failure<E1>& lhs, const failure<E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator<(const failure<E1> &lhs, const failure<E2> &rhs) noexcept -> bool {
   return lhs.error() < rhs.error();
 }
 
 template <typename E1, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator>(const failure<E1>& lhs, const failure<E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator>(const failure<E1> &lhs, const failure<E2> &rhs) noexcept -> bool {
   return lhs.error() > rhs.error();
 }
 
 template <typename E1, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator<=(const failure<E1>& lhs, const failure<E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator<=(const failure<E1> &lhs, const failure<E2> &rhs) noexcept -> bool {
   return lhs.error() <= rhs.error();
 }
 
 template <typename E1, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator>=(const failure<E1>& lhs, const failure<E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator>=(const failure<E1> &lhs, const failure<E2> &rhs) noexcept -> bool {
   return lhs.error() >= rhs.error();
 }
 
@@ -3413,39 +3369,36 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 //-----------------------------------------------------------------------------
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::fail(E&& e) noexcept(
-  std::is_nothrow_constructible<typename std::decay<E>::type, E>::value) -> failure<typename std::decay<E>::type>
-{
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::fail(E &&e) noexcept(
+  std::is_nothrow_constructible<typename std::decay<E>::type, E>::value) -> failure<typename std::decay<E>::type> {
   using result_type = failure<typename std::decay<E>::type>;
 
   return result_type(detail::forward<E>(e));
 }
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::fail(std::reference_wrapper<E> e) noexcept -> failure<E&>
-{
-  using result_type = failure<E&>;
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::fail(std::reference_wrapper<E> e) noexcept
+  -> failure<E &> {
+  using result_type = failure<E &>;
 
   return result_type{e.get()};
 }
 
 template <typename E, typename... Args, typename>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::fail(Args&&... args) noexcept(std::is_nothrow_constructible<E, Args...>::value) -> failure<E>
-{
+  RESULT_NS_IMPL::fail(Args &&...args) noexcept(std::is_nothrow_constructible<E, Args...>::value) -> failure<E> {
   return failure<E>(in_place, detail::forward<Args>(args)...);
 }
 
 template <typename E, typename U, typename... Args, typename>
 inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::fail(
   std::initializer_list<U> ilist,
-  Args&&... args) noexcept(std::is_nothrow_constructible<E, std::initializer_list<U>, Args...>::value) -> failure<E>
-{
+  Args &&...args) noexcept(std::is_nothrow_constructible<E, std::initializer_list<U>, Args...>::value) -> failure<E> {
   return failure<E>(in_place, ilist, detail::forward<Args>(args)...);
 }
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::swap(failure<E>& lhs, failure<E>& rhs)
+inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::swap(failure<E> &lhs, failure<E> &rhs)
 #if __cplusplus >= 201703L
   noexcept(std::is_nothrow_swappable<E>::value) -> void
 #else
@@ -3467,26 +3420,23 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::swap(failure<E>& lhs, failu
 
 template <typename T, typename E, bool IsTrivial>
 inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::detail::result_union<T, E, IsTrivial>::result_union(unit) noexcept
-  : m_empty{}
-{
+  : m_empty{} {
   // m_has_value intentionally not set
 }
 
 template <typename T, typename E, bool IsTrivial>
 template <typename... Args>
 inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::detail::result_union<T, E, IsTrivial>::result_union(
-  in_place_t, Args&&... args) noexcept(std::is_nothrow_constructible<T, Args...>::value)
+  in_place_t, Args &&...args) noexcept(std::is_nothrow_constructible<T, Args...>::value)
   : m_value(detail::forward<Args>(args)...)
-  , m_has_value{true}
-{}
+  , m_has_value{true} {}
 
 template <typename T, typename E, bool IsTrivial>
 template <typename... Args>
 inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::detail::result_union<T, E, IsTrivial>::result_union(
-  in_place_error_t, Args&&... args) noexcept(std::is_nothrow_constructible<E, Args...>::value)
+  in_place_error_t, Args &&...args) noexcept(std::is_nothrow_constructible<E, Args...>::value)
   : m_error(detail::forward<Args>(args)...)
-  , m_has_value{false}
-{}
+  , m_has_value{false} {}
 
 //-----------------------------------------------------------------------------
 // Modifiers
@@ -3494,8 +3444,7 @@ inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::detail::result_union<T
 
 template <typename T, typename E, bool IsTrivial>
 inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_union<T, E, IsTrivial>::destroy() const noexcept
-  -> void
-{
+  -> void {
   // do nothing
 }
 
@@ -3509,33 +3458,29 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_union<T, E, 
 
 template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::detail::result_union<T, E, false>::result_union(unit) noexcept
-  : m_empty{}
-{
+  : m_empty{} {
   // m_has_value intentionally not set
 }
 
 template <typename T, typename E>
 template <typename... Args>
 inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::detail::result_union<T, E, false>::result_union(
-  in_place_t, Args&&... args) noexcept(std::is_nothrow_constructible<T, Args...>::value)
+  in_place_t, Args &&...args) noexcept(std::is_nothrow_constructible<T, Args...>::value)
   : m_value(detail::forward<Args>(args)...)
-  , m_has_value{true}
-{}
+  , m_has_value{true} {}
 
 template <typename T, typename E>
 template <typename... Args>
 inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::detail::result_union<T, E, false>::result_union(
-  in_place_error_t, Args&&... args) noexcept(std::is_nothrow_constructible<E, Args...>::value)
+  in_place_error_t, Args &&...args) noexcept(std::is_nothrow_constructible<E, Args...>::value)
   : m_error(detail::forward<Args>(args)...)
-  , m_has_value{false}
-{}
+  , m_has_value{false} {}
 
 //-----------------------------------------------------------------------------
 
 template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::detail::result_union<T, E, false>::~result_union() noexcept(
-  std::is_nothrow_destructible<T>::value && std::is_nothrow_destructible<E>::value)
-{
+  std::is_nothrow_destructible<T>::value && std::is_nothrow_destructible<E>::value) {
   destroy();
 }
 
@@ -3544,8 +3489,7 @@ inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::detail::result_union<T, E, false
 //-----------------------------------------------------------------------------
 
 template <typename T, typename E>
-inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_union<T, E, false>::destroy() -> void
-{
+inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_union<T, E, false>::destroy() -> void {
   if (m_has_value)
     m_value.~underlying_value_type();
   else
@@ -3562,22 +3506,19 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_union<T, E, 
 
 template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::detail::result_construct_base<T, E>::result_construct_base(unit) noexcept
-  : storage{unit{}}
-{}
+  : storage{unit{}} {}
 
 template <typename T, typename E>
 template <typename... Args>
 inline constexpr RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::detail::result_construct_base<T, E>::result_construct_base(
-  in_place_t, Args&&... args) noexcept(std::is_nothrow_constructible<T, Args...>::value)
-  : storage{in_place, detail::forward<Args>(args)...}
-{}
+  in_place_t, Args &&...args) noexcept(std::is_nothrow_constructible<T, Args...>::value)
+  : storage{in_place, detail::forward<Args>(args)...} {}
 
 template <typename T, typename E>
 template <typename... Args>
 inline constexpr RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::detail::result_construct_base<T, E>::result_construct_base(
-  in_place_error_t, Args&&... args) noexcept(std::is_nothrow_constructible<E, Args...>::value)
-  : storage(in_place_error, detail::forward<Args>(args)...)
-{}
+  in_place_error_t, Args &&...args) noexcept(std::is_nothrow_constructible<E, Args...>::value)
+  : storage(in_place_error, detail::forward<Args>(args)...) {}
 
 //-----------------------------------------------------------------------------
 // Construction / Assignment
@@ -3586,11 +3527,10 @@ inline constexpr RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::detail::result_constru
 template <typename T, typename E>
 template <typename... Args>
 inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_construct_base<T, E>::construct_value(
-  Args&&... args) noexcept(std::is_nothrow_constructible<T, Args...>::value) -> void
-{
+  Args &&...args) noexcept(std::is_nothrow_constructible<T, Args...>::value) -> void {
   using value_type = typename storage_type::underlying_value_type;
 
-  auto* p = static_cast<void*>(std::addressof(storage.m_value));
+  auto *p = static_cast<void *>(std::addressof(storage.m_value));
   new (p) value_type(detail::forward<Args>(args)...);
   storage.m_has_value = true;
 }
@@ -3598,11 +3538,10 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_construct_ba
 template <typename T, typename E>
 template <typename... Args>
 inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_construct_base<T, E>::construct_error(
-  Args&&... args) noexcept(std::is_nothrow_constructible<E, Args...>::value) -> void
-{
+  Args &&...args) noexcept(std::is_nothrow_constructible<E, Args...>::value) -> void {
   using error_type = typename storage_type::underlying_error_type;
 
-  auto* p = static_cast<void*>(std::addressof(storage.m_error));
+  auto *p = static_cast<void *>(std::addressof(storage.m_error));
   new (p) error_type(detail::forward<Args>(args)...);
   storage.m_has_value = false;
 }
@@ -3610,8 +3549,7 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_construct_ba
 template <typename T, typename E>
 template <typename Result>
 inline RESULT_INLINE_VISIBILITY auto
-  RESULT_NS_IMPL::detail::result_construct_base<T, E>::construct_error_from_result(Result&& other) -> void
-{
+  RESULT_NS_IMPL::detail::result_construct_base<T, E>::construct_error_from_result(Result &&other) -> void {
   if (other.storage.m_has_value)
     construct_value();
   else
@@ -3621,8 +3559,7 @@ inline RESULT_INLINE_VISIBILITY auto
 template <typename T, typename E>
 template <typename Result>
 inline RESULT_INLINE_VISIBILITY auto
-  RESULT_NS_IMPL::detail::result_construct_base<T, E>::construct_from_result(Result&& other) -> void
-{
+  RESULT_NS_IMPL::detail::result_construct_base<T, E>::construct_from_result(Result &&other) -> void {
   if (other.storage.m_has_value)
     construct_value_from_result_impl(std::is_lvalue_reference<T>{}, detail::forward<Result>(other).storage.m_value);
   else
@@ -3632,8 +3569,7 @@ inline RESULT_INLINE_VISIBILITY auto
 template <typename T, typename E>
 template <typename Value>
 inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_construct_base<T, E>::assign_value(
-  Value&& value) noexcept(std::is_nothrow_assignable<T, Value>::value) -> void
-{
+  Value &&value) noexcept(std::is_nothrow_assignable<T, Value>::value) -> void {
   if (!storage.m_has_value)
     {
       storage.destroy();
@@ -3648,8 +3584,7 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_construct_ba
 template <typename T, typename E>
 template <typename Error>
 inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_construct_base<T, E>::assign_error(
-  Error&& error) noexcept(std::is_nothrow_assignable<E, Error>::value) -> void
-{
+  Error &&error) noexcept(std::is_nothrow_assignable<E, Error>::value) -> void {
   if (storage.m_has_value)
     {
       storage.destroy();
@@ -3664,8 +3599,7 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_construct_ba
 template <typename T, typename E>
 template <typename Result>
 inline RESULT_INLINE_VISIBILITY auto
-  RESULT_NS_IMPL::detail::result_construct_base<T, E>::assign_from_result(Result&& other) -> void
-{
+  RESULT_NS_IMPL::detail::result_construct_base<T, E>::assign_from_result(Result &&other) -> void {
   if (other.storage.m_has_value != storage.m_has_value)
     {
       storage.destroy();
@@ -3685,11 +3619,10 @@ template <typename T, typename E>
 template <typename ReferenceWrapper>
 inline RESULT_INLINE_VISIBILITY auto
   RESULT_NS_IMPL::detail::result_construct_base<T, E>::construct_value_from_result_impl(
-    std::true_type, ReferenceWrapper&& reference) noexcept -> void
-{
+    std::true_type, ReferenceWrapper &&reference) noexcept -> void {
   using value_type = typename storage_type::underlying_value_type;
 
-  auto* p = static_cast<void*>(std::addressof(storage.m_value));
+  auto *p = static_cast<void *>(std::addressof(storage.m_value));
   new (p) value_type(reference.get());
   storage.m_has_value = true;
 }
@@ -3698,11 +3631,10 @@ template <typename T, typename E>
 template <typename Value>
 inline RESULT_INLINE_VISIBILITY auto
   RESULT_NS_IMPL::detail::result_construct_base<T, E>::construct_value_from_result_impl(
-    std::false_type, Value&& value) noexcept(std::is_nothrow_constructible<T, Value>::value) -> void
-{
+    std::false_type, Value &&value) noexcept(std::is_nothrow_constructible<T, Value>::value) -> void {
   using value_type = typename storage_type::underlying_value_type;
 
-  auto* p = static_cast<void*>(std::addressof(storage.m_value));
+  auto *p = static_cast<void *>(std::addressof(storage.m_value));
   new (p) value_type(detail::forward<Value>(value));
   storage.m_has_value = true;
 }
@@ -3710,8 +3642,7 @@ inline RESULT_INLINE_VISIBILITY auto
 template <typename T, typename E>
 template <typename Result>
 inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_construct_base<T, E>::assign_value_from_result_impl(
-  std::true_type, Result&& other) -> void
-{
+  std::true_type, Result &&other) -> void {
   // T is a reference; unwrap it
   storage.m_value = other.storage.m_value.get();
 }
@@ -3719,8 +3650,7 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_construct_ba
 template <typename T, typename E>
 template <typename Result>
 inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_construct_base<T, E>::assign_value_from_result_impl(
-  std::false_type, Result&& other) -> void
-{
+  std::false_type, Result &&other) -> void {
   storage.m_value = detail::forward<Result>(other).storage.m_value;
 }
 
@@ -3731,13 +3661,12 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_construct_ba
 template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY
   RESULT_NS_IMPL::detail::result_trivial_copy_ctor_base_impl<T, E>::result_trivial_copy_ctor_base_impl(
-    const result_trivial_copy_ctor_base_impl&
-      other) noexcept(std::is_nothrow_copy_constructible<T>::value && std::is_nothrow_copy_constructible<E>::value)
-  : base_type(unit{})
-{
+    const result_trivial_copy_ctor_base_impl
+      &other) noexcept(std::is_nothrow_copy_constructible<T>::value && std::is_nothrow_copy_constructible<E>::value)
+  : base_type(unit{}) {
   using ctor_base = result_construct_base<T, E>;
 
-  ctor_base::construct_from_result(static_cast<const ctor_base&>(other));
+  ctor_base::construct_from_result(static_cast<const ctor_base &>(other));
 }
 
 //=============================================================================
@@ -3747,13 +3676,12 @@ inline RESULT_INLINE_VISIBILITY
 template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY
   RESULT_NS_IMPL::detail::result_trivial_move_ctor_base_impl<T, E>::result_trivial_move_ctor_base_impl(
-    result_trivial_move_ctor_base_impl&&
-      other) noexcept(std::is_nothrow_move_constructible<T>::value && std::is_nothrow_move_constructible<E>::value)
-  : base_type(unit{})
-{
+    result_trivial_move_ctor_base_impl
+      &&other) noexcept(std::is_nothrow_move_constructible<T>::value && std::is_nothrow_move_constructible<E>::value)
+  : base_type(unit{}) {
   using ctor_base = result_construct_base<T, E>;
 
-  ctor_base::construct_from_result(static_cast<ctor_base&&>(other));
+  ctor_base::construct_from_result(static_cast<ctor_base &&>(other));
 }
 
 //=============================================================================
@@ -3762,14 +3690,13 @@ inline RESULT_INLINE_VISIBILITY
 
 template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_trivial_copy_assign_base_impl<T, E>::
-  operator=(const result_trivial_copy_assign_base_impl& other) noexcept(
+  operator=(const result_trivial_copy_assign_base_impl &other) noexcept(
     std::is_nothrow_copy_constructible<T>::value && std::is_nothrow_copy_constructible<E>::value
     && std::is_nothrow_copy_assignable<T>::value
-    && std::is_nothrow_copy_assignable<E>::value) -> result_trivial_copy_assign_base_impl&
-{
+    && std::is_nothrow_copy_assignable<E>::value) -> result_trivial_copy_assign_base_impl & {
   using ctor_base = result_construct_base<T, E>;
 
-  ctor_base::assign_from_result(static_cast<const ctor_base&>(other));
+  ctor_base::assign_from_result(static_cast<const ctor_base &>(other));
   return (*this);
 }
 
@@ -3779,41 +3706,36 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_trivial_copy
 
 template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::result_trivial_move_assign_base_impl<T, E>::
-  operator=(result_trivial_move_assign_base_impl&& other) noexcept(
+  operator=(result_trivial_move_assign_base_impl &&other) noexcept(
     std::is_nothrow_move_constructible<T>::value && std::is_nothrow_move_constructible<E>::value
     && std::is_nothrow_move_assignable<T>::value
-    && std::is_nothrow_move_assignable<E>::value) -> result_trivial_move_assign_base_impl&
-{
+    && std::is_nothrow_move_assignable<E>::value) -> result_trivial_move_assign_base_impl & {
   using ctor_base = result_construct_base<T, E>;
 
-  ctor_base::assign_from_result(static_cast<ctor_base&&>(other));
+  ctor_base::assign_from_result(static_cast<ctor_base &&>(other));
   return (*this);
 }
 
 template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::detail::result_error_extractor::get(const result<T, E>& exp) noexcept -> const E&
-{
+  RESULT_NS_IMPL::detail::result_error_extractor::get(const result<T, E> &exp) noexcept -> const E & {
   return exp.m_storage.storage.m_error;
 }
 
 template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::detail::result_error_extractor::get(result<T, E>& exp) noexcept -> E&
-{
+  RESULT_NS_IMPL::detail::result_error_extractor::get(result<T, E> &exp) noexcept -> E & {
   return exp.m_storage.storage.m_error;
 }
 
 template <typename T, typename E>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::detail::extract_error(const result<T, E>& exp) noexcept
-  -> const E&
-{
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::detail::extract_error(const result<T, E> &exp) noexcept
+  -> const E & {
   return result_error_extractor::get(exp);
 }
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::throw_bad_result_access(E&& error) -> void
-{
+inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::throw_bad_result_access(E &&error) -> void {
 #if defined(RESULT_DISABLE_EXCEPTIONS)
   std::fprintf(stderr, "error attempting to access value from result containing error\n");
   std::abort();
@@ -3826,8 +3748,7 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::detail::throw_bad_result_ac
 
 template <typename String, typename E>
 inline RESULT_INLINE_VISIBILITY auto
-  RESULT_NS_IMPL::detail::throw_bad_result_access_message(String&& message, E&& error) -> void
-{
+  RESULT_NS_IMPL::detail::throw_bad_result_access_message(String &&message, E &&error) -> void {
 #if defined(RESULT_DISABLE_EXCEPTIONS)
   const auto message_string = std::string{detail::forward<String>(message)};
   std::fprintf(stderr, "%s\n", message_string.c_str());
@@ -3847,19 +3768,17 @@ template <typename T, typename E>
 template <typename U, typename>
 inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<T, E>::result() noexcept(
   std::is_nothrow_constructible<U>::value)
-  : m_storage(in_place)
-{}
+  : m_storage(in_place) {}
 
 template <typename T, typename E>
 template <
   typename T2,
   typename E2,
   typename std::enable_if<RESULT_NS_IMPL::detail::result_is_implicit_copy_convertible<T, E, T2, E2>::value, int>::type>
-inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::result<T, E>::result(const result<T2, E2>& other) noexcept(
-  std::is_nothrow_constructible<T, const T2&>::value && std::is_nothrow_constructible<E, const E2&>::value)
-  : m_storage(detail::unit{})
-{
-  m_storage.construct_from_result(static_cast<const result<T2, E2>&>(other).m_storage);
+inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::result<T, E>::result(const result<T2, E2> &other) noexcept(
+  std::is_nothrow_constructible<T, const T2 &>::value && std::is_nothrow_constructible<E, const E2 &>::value)
+  : m_storage(detail::unit{}) {
+  m_storage.construct_from_result(static_cast<const result<T2, E2> &>(other).m_storage);
 }
 
 template <typename T, typename E>
@@ -3867,11 +3786,10 @@ template <
   typename T2,
   typename E2,
   typename std::enable_if<RESULT_NS_IMPL::detail::result_is_explicit_copy_convertible<T, E, T2, E2>::value, int>::type>
-inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::result<T, E>::result(const result<T2, E2>& other) noexcept(
-  std::is_nothrow_constructible<T, const T2&>::value && std::is_nothrow_constructible<E, const E2&>::value)
-  : m_storage(detail::unit{})
-{
-  m_storage.construct_from_result(static_cast<const result<T2, E2>&>(other).m_storage);
+inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::result<T, E>::result(const result<T2, E2> &other) noexcept(
+  std::is_nothrow_constructible<T, const T2 &>::value && std::is_nothrow_constructible<E, const E2 &>::value)
+  : m_storage(detail::unit{}) {
+  m_storage.construct_from_result(static_cast<const result<T2, E2> &>(other).m_storage);
 }
 
 template <typename T, typename E>
@@ -3879,11 +3797,10 @@ template <
   typename T2,
   typename E2,
   typename std::enable_if<RESULT_NS_IMPL::detail::result_is_implicit_move_convertible<T, E, T2, E2>::value, int>::type>
-inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::result<T, E>::result(result<T2, E2>&& other) noexcept(
-  std::is_nothrow_constructible<T, T2&&>::value && std::is_nothrow_constructible<E, E2&&>::value)
-  : m_storage(detail::unit{})
-{
-  m_storage.construct_from_result(static_cast<result<T2, E2>&&>(other).m_storage);
+inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::result<T, E>::result(result<T2, E2> &&other) noexcept(
+  std::is_nothrow_constructible<T, T2 &&>::value && std::is_nothrow_constructible<E, E2 &&>::value)
+  : m_storage(detail::unit{}) {
+  m_storage.construct_from_result(static_cast<result<T2, E2> &&>(other).m_storage);
 }
 
 template <typename T, typename E>
@@ -3891,127 +3808,113 @@ template <
   typename T2,
   typename E2,
   typename std::enable_if<RESULT_NS_IMPL::detail::result_is_explicit_move_convertible<T, E, T2, E2>::value, int>::type>
-inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::result<T, E>::result(result<T2, E2>&& other) noexcept(
-  std::is_nothrow_constructible<T, T2&&>::value && std::is_nothrow_constructible<E, E2&&>::value)
-  : m_storage(detail::unit{})
-{
-  m_storage.construct_from_result(static_cast<result<T2, E2>&&>(other).m_storage);
+inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::result<T, E>::result(result<T2, E2> &&other) noexcept(
+  std::is_nothrow_constructible<T, T2 &&>::value && std::is_nothrow_constructible<E, E2 &&>::value)
+  : m_storage(detail::unit{}) {
+  m_storage.construct_from_result(static_cast<result<T2, E2> &&>(other).m_storage);
 }
 
 //-----------------------------------------------------------------------------
 
 template <typename T, typename E>
 template <typename... Args, typename>
-inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<T, E>::result(in_place_t, Args&&... args) noexcept(
+inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<T, E>::result(in_place_t, Args &&...args) noexcept(
   std::is_nothrow_constructible<T, Args...>::value)
-  : m_storage(in_place, detail::forward<Args>(args)...)
-{}
+  : m_storage(in_place, detail::forward<Args>(args)...) {}
 
 template <typename T, typename E>
 template <typename U, typename... Args, typename>
 inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<T, E>::result(
   in_place_t,
   std::initializer_list<U> ilist,
-  Args&&... args) noexcept(std::is_nothrow_constructible<T, std::initializer_list<U>, Args...>::value)
-  : m_storage(in_place, ilist, detail::forward<Args>(args)...)
-{}
+  Args &&...args) noexcept(std::is_nothrow_constructible<T, std::initializer_list<U>, Args...>::value)
+  : m_storage(in_place, ilist, detail::forward<Args>(args)...) {}
 
 //-----------------------------------------------------------------------------
 
 template <typename T, typename E>
 template <typename... Args, typename>
 inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<T, E>::result(
-  in_place_error_t, Args&&... args) noexcept(std::is_nothrow_constructible<E, Args...>::value)
-  : m_storage(in_place_error, detail::forward<Args>(args)...)
-{}
+  in_place_error_t, Args &&...args) noexcept(std::is_nothrow_constructible<E, Args...>::value)
+  : m_storage(in_place_error, detail::forward<Args>(args)...) {}
 
 template <typename T, typename E>
 template <typename U, typename... Args, typename>
 inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<T, E>::result(
   in_place_error_t,
   std::initializer_list<U> ilist,
-  Args&&... args) noexcept(std::is_nothrow_constructible<E, std::initializer_list<U>, Args...>::value)
-  : m_storage(in_place_error, ilist, detail::forward<Args>(args)...)
-{}
+  Args &&...args) noexcept(std::is_nothrow_constructible<E, std::initializer_list<U>, Args...>::value)
+  : m_storage(in_place_error, ilist, detail::forward<Args>(args)...) {}
 
 //-------------------------------------------------------------------------
 
 template <typename T, typename E>
 template <typename E2, typename>
-inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<T, E>::result(const failure<E2>& e) noexcept(
-  std::is_nothrow_constructible<E, const E2&>::value)
-  : m_storage(in_place_error, e.error())
-{}
+inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<T, E>::result(const failure<E2> &e) noexcept(
+  std::is_nothrow_constructible<E, const E2 &>::value)
+  : m_storage(in_place_error, e.error()) {}
 
 template <typename T, typename E>
 template <typename E2, typename>
-inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<T, E>::result(failure<E2>&& e) noexcept(
-  std::is_nothrow_constructible<E, E2&&>::value)
-  : m_storage(in_place_error, static_cast<E2&&>(e.error()))
-{}
+inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<T, E>::result(failure<E2> &&e) noexcept(
+  std::is_nothrow_constructible<E, E2 &&>::value)
+  : m_storage(in_place_error, static_cast<E2 &&>(e.error())) {}
 
 template <typename T, typename E>
 template <
   typename U,
   typename std::enable_if<RESULT_NS_IMPL::detail::result_is_explicit_value_convertible<T, U>::value, int>::type>
-inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<T, E>::result(U&& value) noexcept(
+inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<T, E>::result(U &&value) noexcept(
   std::is_nothrow_constructible<T, U>::value)
-  : m_storage(in_place, detail::forward<U>(value))
-{}
+  : m_storage(in_place, detail::forward<U>(value)) {}
 
 template <typename T, typename E>
 template <
   typename U,
   typename std::enable_if<RESULT_NS_IMPL::detail::result_is_implicit_value_convertible<T, U>::value, int>::type>
-inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<T, E>::result(U&& value) noexcept(
+inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<T, E>::result(U &&value) noexcept(
   std::is_nothrow_constructible<T, U>::value)
-  : m_storage(in_place, detail::forward<U>(value))
-{}
+  : m_storage(in_place, detail::forward<U>(value)) {}
 
 //-----------------------------------------------------------------------------
 
 template <typename T, typename E>
 template <typename T2, typename E2, typename>
-inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<T, E>::operator=(const result<T2, E2>& other) noexcept(
-  std::is_nothrow_assignable<T, const T2&>::value && std::is_nothrow_assignable<E, const E2&>::value) -> result&
-{
-  m_storage.assign_from_result(static_cast<const result<T2, E2>&>(other).m_storage);
+inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<T, E>::operator=(const result<T2, E2> &other) noexcept(
+  std::is_nothrow_assignable<T, const T2 &>::value && std::is_nothrow_assignable<E, const E2 &>::value) -> result & {
+  m_storage.assign_from_result(static_cast<const result<T2, E2> &>(other).m_storage);
   return (*this);
 }
 
 template <typename T, typename E>
 template <typename T2, typename E2, typename>
-inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<T, E>::operator=(result<T2, E2>&& other) noexcept(
-  std::is_nothrow_assignable<T, T2&&>::value && std::is_nothrow_assignable<E, E2&&>::value) -> result&
-{
-  m_storage.assign_from_result(static_cast<result<T2, E2>&&>(other).m_storage);
+inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<T, E>::operator=(result<T2, E2> &&other) noexcept(
+  std::is_nothrow_assignable<T, T2 &&>::value && std::is_nothrow_assignable<E, E2 &&>::value) -> result & {
+  m_storage.assign_from_result(static_cast<result<T2, E2> &&>(other).m_storage);
   return (*this);
 }
 
 template <typename T, typename E>
 template <typename U, typename>
 inline RESULT_INLINE_VISIBILITY auto
-  RESULT_NS_IMPL::result<T, E>::operator=(U&& value) noexcept(std::is_nothrow_assignable<T, U>::value) -> result&
-{
+  RESULT_NS_IMPL::result<T, E>::operator=(U &&value) noexcept(std::is_nothrow_assignable<T, U>::value) -> result & {
   m_storage.assign_value(detail::forward<U>(value));
   return (*this);
 }
 
 template <typename T, typename E>
 template <typename E2, typename>
-inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<T, E>::operator=(const failure<E2>& other) noexcept(
-  std::is_nothrow_assignable<E, const E2&>::value) -> result&
-{
+inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<T, E>::operator=(const failure<E2> &other) noexcept(
+  std::is_nothrow_assignable<E, const E2 &>::value) -> result & {
   m_storage.assign_error(other.error());
   return (*this);
 }
 
 template <typename T, typename E>
 template <typename E2, typename>
-inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<T, E>::operator=(failure<E2>&& other) noexcept(
-  std::is_nothrow_assignable<E, E2&&>::value) -> result&
-{
-  m_storage.assign_error(static_cast<E2&&>(other.error()));
+inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<T, E>::operator=(failure<E2> &&other) noexcept(
+  std::is_nothrow_assignable<E, E2 &&>::value) -> result & {
+  m_storage.assign_error(static_cast<E2 &&>(other.error()));
   return (*this);
 }
 
@@ -4021,8 +3924,7 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<T, E>::operator=(fai
 
 template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<T, E>::operator->() noexcept ->
-  typename std::remove_reference<T>::type*
-{
+  typename std::remove_reference<T>::type * {
   // Prior to C++17, std::addressof was not `constexpr`.
   // Since `addressof` fixes a relatively obscure issue where users define a
   // custom `operator&`, the pre-C++17 implementation has been defined to be
@@ -4036,8 +3938,7 @@ inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::resu
 
 template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::operator->() const noexcept ->
-  typename std::remove_reference<typename std::add_const<T>::type>::type*
-{
+  typename std::remove_reference<typename std::add_const<T>::type>::type * {
 #if __cplusplus >= 201703L
   return std::addressof(**this);
 #else
@@ -4047,31 +3948,27 @@ inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::ope
 
 template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<T, E>::operator*() & noexcept ->
-  typename std::add_lvalue_reference<T>::type
-{
+  typename std::add_lvalue_reference<T>::type {
   return m_storage.storage.m_value;
 }
 
 template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<T, E>::operator*() && noexcept ->
-  typename std::add_rvalue_reference<T>::type
-{
+  typename std::add_rvalue_reference<T>::type {
   using reference = typename std::add_rvalue_reference<T>::type;
 
   return static_cast<reference>(m_storage.storage.m_value);
 }
 
 template <typename T, typename E>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::operator*() const& noexcept ->
-  typename std::add_lvalue_reference<typename std::add_const<T>::type>::type
-{
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::operator*() const & noexcept ->
+  typename std::add_lvalue_reference<typename std::add_const<T>::type>::type {
   return m_storage.storage.m_value;
 }
 
 template <typename T, typename E>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::operator*() const&& noexcept ->
-  typename std::add_rvalue_reference<typename std::add_const<T>::type>::type
-{
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::operator*() const && noexcept ->
+  typename std::add_rvalue_reference<typename std::add_const<T>::type>::type {
   using reference = typename std::add_rvalue_reference<typename std::add_const<T>::type>::type;
 
   return static_cast<reference>(m_storage.storage.m_value);
@@ -4080,20 +3977,17 @@ inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::ope
 //-----------------------------------------------------------------------------
 
 template <typename T, typename E>
-inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<T, E>::operator bool() const noexcept
-{
+inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<T, E>::operator bool() const noexcept {
   return m_storage.storage.m_has_value;
 }
 
 template <typename T, typename E>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::has_value() const noexcept -> bool
-{
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::has_value() const noexcept -> bool {
   return m_storage.storage.m_has_value;
 }
 
 template <typename T, typename E>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::has_error() const noexcept -> bool
-{
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::has_error() const noexcept -> bool {
   return !m_storage.storage.m_has_value;
 }
 
@@ -4109,46 +4003,42 @@ inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::has
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-value"
 #elif defined(_MSC_VER)
-// Older MSVC versions incorrectly warn on returning a reference to a temporary.
-// This has been suppressed
+// Older MSVC versions incorrectly warn on returning a reference to a
+// temporary. This has been suppressed
 #pragma warning(push)
 #pragma warning(disable : 4172)
 #endif
 
 template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<T, E>::value() & ->
-  typename std::add_lvalue_reference<T>::type
-{
+  typename std::add_lvalue_reference<T>::type {
   return (
     has_value() || (detail::throw_bad_result_access(m_storage.storage.m_error), false), m_storage.storage.m_value);
 }
 
 template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<T, E>::value() && ->
-  typename std::add_rvalue_reference<T>::type
-{
+  typename std::add_rvalue_reference<T>::type {
   using reference = typename std::add_rvalue_reference<T>::type;
 
   return (
-    has_value() || (detail::throw_bad_result_access(static_cast<E&&>(m_storage.storage.m_error)), true),
+    has_value() || (detail::throw_bad_result_access(static_cast<E &&>(m_storage.storage.m_error)), true),
     static_cast<reference>(m_storage.storage.m_value));
 }
 
 template <typename T, typename E>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::value() const& ->
-  typename std::add_lvalue_reference<typename std::add_const<T>::type>::type
-{
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::value() const & ->
+  typename std::add_lvalue_reference<typename std::add_const<T>::type>::type {
   return (has_value() || (detail::throw_bad_result_access(m_storage.storage.m_error), true), m_storage.storage.m_value);
 }
 
 template <typename T, typename E>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::value() const&& ->
-  typename std::add_rvalue_reference<typename std::add_const<T>::type>::type
-{
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::value() const && ->
+  typename std::add_rvalue_reference<typename std::add_const<T>::type>::type {
   using reference = typename std::add_rvalue_reference<typename std::add_const<T>::type>::type;
 
   return (
-    has_value() || (detail::throw_bad_result_access(static_cast<const E&&>(m_storage.storage.m_error)), true),
+    has_value() || (detail::throw_bad_result_access(static_cast<const E &&>(m_storage.storage.m_error)), true),
     (static_cast<reference>(m_storage.storage.m_value)));
 }
 
@@ -4161,9 +4051,8 @@ inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::val
 #endif
 
 template <typename T, typename E>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::error() const& noexcept(
-  std::is_nothrow_constructible<E>::value && std::is_nothrow_copy_constructible<E>::value) -> E
-{
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::error() const & noexcept(
+  std::is_nothrow_constructible<E>::value && std::is_nothrow_copy_constructible<E>::value) -> E {
   static_assert(
     std::is_default_constructible<E>::value,
     "E must be default-constructible if 'error()' checks are used. "
@@ -4175,24 +4064,22 @@ inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::err
 
 template <typename T, typename E>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<T, E>::error() && noexcept(
-  std::is_nothrow_constructible<E>::value && std::is_nothrow_move_constructible<E>::value) -> E
-{
+  std::is_nothrow_constructible<E>::value && std::is_nothrow_move_constructible<E>::value) -> E {
   static_assert(
     std::is_default_constructible<E>::value,
     "E must be default-constructible if 'error()' checks are used. "
     "This is to allow for default-constructed error states to represent the "
     "'good' state");
 
-  return m_storage.storage.m_has_value ? E{} : static_cast<E&&>(m_storage.storage.m_error);
+  return m_storage.storage.m_has_value ? E{} : static_cast<E &&>(m_storage.storage.m_error);
 }
 
 //-----------------------------------------------------------------------------
 
 template <typename T, typename E>
 template <typename String, typename>
-inline RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<T, E>::expect(String&& message) & ->
-  typename std::add_lvalue_reference<T>::type
-{
+inline RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<T, E>::expect(String &&message) & ->
+  typename std::add_lvalue_reference<T>::type {
   return (
     has_value()
       || (detail::throw_bad_result_access_message(detail::forward<String>(message), m_storage.storage.m_error), true),
@@ -4201,22 +4088,20 @@ inline RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<T, E>::expect(String&&
 
 template <typename T, typename E>
 template <typename String, typename>
-inline RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<T, E>::expect(String&& message) && ->
-  typename std::add_rvalue_reference<T>::type
-{
+inline RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<T, E>::expect(String &&message) && ->
+  typename std::add_rvalue_reference<T>::type {
   using reference = typename std::add_rvalue_reference<T>::type;
 
   return (
     has_value()
-      || (detail::throw_bad_result_access_message(detail::forward<String>(message), static_cast<E&&>(m_storage.storage.m_error)), true),
+      || (detail::throw_bad_result_access_message(detail::forward<String>(message), static_cast<E &&>(m_storage.storage.m_error)), true),
     static_cast<reference>(m_storage.storage.m_value));
 }
 
 template <typename T, typename E>
 template <typename String, typename>
-inline RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<T, E>::expect(String&& message) const& ->
-  typename std::add_lvalue_reference<typename std::add_const<T>::type>::type
-{
+inline RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<T, E>::expect(String &&message) const & ->
+  typename std::add_lvalue_reference<typename std::add_const<T>::type>::type {
   return (
     has_value()
       || (detail::throw_bad_result_access_message(detail::forward<String>(message), m_storage.storage.m_error), true),
@@ -4225,18 +4110,16 @@ inline RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<T, E>::expect(String&&
 
 template <typename T, typename E>
 template <typename String, typename>
-inline RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<T, E>::expect(String&& message) const&& ->
-  typename std::add_rvalue_reference<typename std::add_const<T>::type>::type
-{
+inline RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<T, E>::expect(String &&message) const && ->
+  typename std::add_rvalue_reference<typename std::add_const<T>::type>::type {
   using reference = typename std::add_rvalue_reference<typename std::add_const<T>::type>::type;
 
-  return (has_value() ||
-            (detail::throw_bad_result_access_message(
-                    detail::forward<String>(message),
-                    static_cast<const E&&>(m_storage.storage.m_error)
-            ), true),
-            (static_cast<reference>(m_storage.storage.m_value))
-    );
+  return (
+      has_value() || (detail::throw_bad_result_access_message(
+                          detail::forward<String>(message),
+                          static_cast<const E &&>(m_storage.storage.m_error)),
+                      true),
+      (static_cast<reference>(m_storage.storage.m_value)));
 }
 
 //-----------------------------------------------------------------------------
@@ -4245,43 +4128,38 @@ inline RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<T, E>::expect(String&&
 
 template <typename T, typename E>
 template <typename U>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::value_or(U&& default_value) const& ->
-  typename std::remove_reference<T>::type
-{
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::value_or(U &&default_value) const & ->
+  typename std::remove_reference<T>::type {
   return m_storage.storage.m_has_value ? m_storage.storage.m_value : detail::forward<U>(default_value);
 }
 
 template <typename T, typename E>
 template <typename U>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
-  RESULT_NS_IMPL::result<T, E>::value_or(U&& default_value) && -> typename std::remove_reference<T>::type
-{
-  return m_storage.storage.m_has_value ? static_cast<T&&>(**this) : detail::forward<U>(default_value);
+  RESULT_NS_IMPL::result<T, E>::value_or(U &&default_value) && -> typename std::remove_reference<T>::type {
+  return m_storage.storage.m_has_value ? static_cast<T &&>(**this) : detail::forward<U>(default_value);
 }
 
 template <typename T, typename E>
 template <typename U>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::result<T, E>::error_or(U&& default_error) const& -> error_type
-{
+  RESULT_NS_IMPL::result<T, E>::error_or(U &&default_error) const & -> error_type {
   return m_storage.storage.m_has_value ? detail::forward<U>(default_error) : m_storage.storage.m_error;
 }
 
 template <typename T, typename E>
 template <typename U>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
-  RESULT_NS_IMPL::result<T, E>::error_or(U&& default_error) && -> error_type
-{
+  RESULT_NS_IMPL::result<T, E>::error_or(U &&default_error) && -> error_type {
   return m_storage.storage.m_has_value ? detail::forward<U>(default_error)
-                                       : static_cast<E&&>(m_storage.storage.m_error);
+                                       : static_cast<E &&>(m_storage.storage.m_error);
 }
 
 template <typename T, typename E>
 template <typename U>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::and_then(U&& value) const
-  -> result<typename std::decay<U>::type, E>
-{
-  return map([&value](const T&) { return detail::forward<U>(value); });
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::and_then(U &&value) const
+  -> result<typename std::decay<U>::type, E> {
+  return map([&value](const T &) { return detail::forward<U>(value); });
 }
 
 //-----------------------------------------------------------------------------
@@ -4289,9 +4167,8 @@ inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::and
 template <typename T, typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::result<T, E>::flat_map(Fn&& fn) const& -> detail::invoke_result_t<Fn, const T&>
-{
-  using result_type = detail::invoke_result_t<Fn, const T&>;
+  RESULT_NS_IMPL::result<T, E>::flat_map(Fn &&fn) const & -> detail::invoke_result_t<Fn, const T &> {
+  using result_type = detail::invoke_result_t<Fn, const T &>;
 
   static_assert(is_result<result_type>::value, "flat_map must return a result type or the program is ill-formed");
 
@@ -4302,22 +4179,20 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 template <typename T, typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
-  RESULT_NS_IMPL::result<T, E>::flat_map(Fn&& fn) && -> detail::invoke_result_t<Fn, T&&>
-{
-  using result_type = detail::invoke_result_t<Fn, T&&>;
+  RESULT_NS_IMPL::result<T, E>::flat_map(Fn &&fn) && -> detail::invoke_result_t<Fn, T &&> {
+  using result_type = detail::invoke_result_t<Fn, T &&>;
 
   static_assert(is_result<result_type>::value, "flat_map must return a result type or the program is ill-formed");
 
-  return has_value() ? detail::invoke(detail::forward<Fn>(fn), static_cast<T&&>(m_storage.storage.m_value))
-                     : result_type(in_place_error, static_cast<E&&>(m_storage.storage.m_error));
+  return has_value() ? detail::invoke(detail::forward<Fn>(fn), static_cast<T &&>(m_storage.storage.m_value))
+                     : result_type(in_place_error, static_cast<E &&>(m_storage.storage.m_error));
 }
 
 template <typename T, typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::result<T, E>::map(Fn&& fn) const& -> result<detail::invoke_result_t<Fn, const T&>, E>
-{
-  using result_type = detail::invoke_result_t<Fn, const T&>;
+  RESULT_NS_IMPL::result<T, E>::map(Fn &&fn) const & -> result<detail::invoke_result_t<Fn, const T &>, E> {
+  using result_type = detail::invoke_result_t<Fn, const T &>;
 
   return map_impl(std::is_void<result_type>{}, detail::forward<Fn>(fn));
 }
@@ -4325,11 +4200,10 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 template <typename T, typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
-  RESULT_NS_IMPL::result<T, E>::map(Fn&& fn) && -> result<detail::invoke_result_t<Fn, T&&>, E>
-{
-  using result_type = detail::invoke_result_t<Fn, T&&>;
+  RESULT_NS_IMPL::result<T, E>::map(Fn &&fn) && -> result<detail::invoke_result_t<Fn, T &&>, E> {
+  using result_type = detail::invoke_result_t<Fn, T &&>;
 
-  return static_cast<result<T, E>&&>(*this).map_impl(std::is_void<result_type>{}, detail::forward<Fn>(fn));
+  return static_cast<result<T, E> &&>(*this).map_impl(std::is_void<result_type>{}, detail::forward<Fn>(fn));
 }
 
 //-----------------------------------------------------------------------------
@@ -4337,9 +4211,8 @@ inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
 template <typename T, typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::result<T, E>::map_error(Fn&& fn) const& -> result<T, detail::invoke_result_t<Fn, const E&>>
-{
-  using result_type = result<T, detail::invoke_result_t<Fn, const E&>>;
+  RESULT_NS_IMPL::result<T, E>::map_error(Fn &&fn) const & -> result<T, detail::invoke_result_t<Fn, const E &>> {
+  using result_type = result<T, detail::invoke_result_t<Fn, const E &>>;
 
   return has_error() ? result_type(in_place_error, detail::invoke(detail::forward<Fn>(fn), m_storage.storage.m_error))
                      : result_type(in_place, m_storage.storage.m_value);
@@ -4348,22 +4221,20 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 template <typename T, typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
-  RESULT_NS_IMPL::result<T, E>::map_error(Fn&& fn) && -> result<T, detail::invoke_result_t<Fn, E&&>>
-{
-  using result_type = result<T, detail::invoke_result_t<Fn, E&&>>;
+  RESULT_NS_IMPL::result<T, E>::map_error(Fn &&fn) && -> result<T, detail::invoke_result_t<Fn, E &&>> {
+  using result_type = result<T, detail::invoke_result_t<Fn, E &&>>;
 
   return has_error()
            ? result_type(
-               in_place_error, detail::invoke(detail::forward<Fn>(fn), static_cast<E&&>(m_storage.storage.m_error)))
-           : result_type(static_cast<T&&>(m_storage.storage.m_value));
+               in_place_error, detail::invoke(detail::forward<Fn>(fn), static_cast<E &&>(m_storage.storage.m_error)))
+           : result_type(static_cast<T &&>(m_storage.storage.m_value));
 }
 
 template <typename T, typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::result<T, E>::flat_map_error(Fn&& fn) const& -> detail::invoke_result_t<Fn, const E&>
-{
-  using result_type = detail::invoke_result_t<Fn, const E&>;
+  RESULT_NS_IMPL::result<T, E>::flat_map_error(Fn &&fn) const & -> detail::invoke_result_t<Fn, const E &> {
+  using result_type = detail::invoke_result_t<Fn, const E &>;
 
   static_assert(is_result<result_type>::value, "flat_map_error must return a result type or the program is ill-formed");
 
@@ -4374,14 +4245,13 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 template <typename T, typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
-  RESULT_NS_IMPL::result<T, E>::flat_map_error(Fn&& fn) && -> detail::invoke_result_t<Fn, E&&>
-{
-  using result_type = detail::invoke_result_t<Fn, E&&>;
+  RESULT_NS_IMPL::result<T, E>::flat_map_error(Fn &&fn) && -> detail::invoke_result_t<Fn, E &&> {
+  using result_type = detail::invoke_result_t<Fn, E &&>;
 
   static_assert(is_result<result_type>::value, "flat_map_error must return a result type or the program is ill-formed");
 
-  return has_value() ? result_type(in_place, static_cast<T&&>(m_storage.storage.m_value))
-                     : detail::invoke(detail::forward<Fn>(fn), static_cast<E&&>(m_storage.storage.m_error));
+  return has_value() ? result_type(in_place, static_cast<T &&>(m_storage.storage.m_value))
+                     : detail::invoke(detail::forward<Fn>(fn), static_cast<E &&>(m_storage.storage.m_error));
 }
 
 //-----------------------------------------------------------------------------
@@ -4391,8 +4261,7 @@ inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
 template <typename T, typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::result<T, E>::map_impl(std::true_type, Fn&& fn) const& -> result<void, E>
-{
+  RESULT_NS_IMPL::result<T, E>::map_impl(std::true_type, Fn &&fn) const & -> result<void, E> {
   using result_type = result<void, E>;
 
   return has_value() ? (detail::invoke(detail::forward<Fn>(fn), m_storage.storage.m_value), result_type{})
@@ -4402,9 +4271,8 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 template <typename T, typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::map_impl(
-  std::false_type, Fn&& fn) const& -> result<detail::invoke_result_t<Fn, const T&>, E>
-{
-  using invoke_result_type = detail::invoke_result_t<Fn, const T&>;
+  std::false_type, Fn &&fn) const & -> result<detail::invoke_result_t<Fn, const T &>, E> {
+  using invoke_result_type = detail::invoke_result_t<Fn, const T &>;
   using result_type        = result<invoke_result_type, E>;
 
   return has_value() ? result_type(in_place, detail::invoke(detail::forward<Fn>(fn), m_storage.storage.m_value))
@@ -4414,26 +4282,25 @@ inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<T, E>::map
 template <typename T, typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
-  RESULT_NS_IMPL::result<T, E>::map_impl(std::true_type, Fn&& fn) && -> result<void, E>
-{
+  RESULT_NS_IMPL::result<T, E>::map_impl(std::true_type, Fn &&fn) && -> result<void, E> {
   using result_type = result<void, E>;
 
   return has_value()
-           ? (detail::invoke(detail::forward<Fn>(fn), static_cast<T&&>(m_storage.storage.m_value)), result_type{})
-           : result_type(in_place_error, static_cast<E&&>(m_storage.storage.m_error));
+           ? (detail::invoke(detail::forward<Fn>(fn), static_cast<T &&>(m_storage.storage.m_value)), result_type{})
+           : result_type(in_place_error, static_cast<E &&>(m_storage.storage.m_error));
 }
 
 template <typename T, typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
-  RESULT_NS_IMPL::result<T, E>::map_impl(std::false_type, Fn&& fn) && -> result<detail::invoke_result_t<Fn, T&&>, E>
-{
-  using invoke_result_type = detail::invoke_result_t<Fn, T&&>;
+  RESULT_NS_IMPL::result<T, E>::map_impl(std::false_type, Fn &&fn) && -> result<detail::invoke_result_t<Fn, T &&>, E> {
+  using invoke_result_type = detail::invoke_result_t<Fn, T &&>;
   using result_type        = result<invoke_result_type, E>;
 
   return has_value()
-           ? result_type(in_place, detail::invoke(detail::forward<Fn>(fn), static_cast<T&&>(m_storage.storage.m_value)))
-           : result_type(in_place_error, static_cast<E&&>(m_storage.storage.m_error));
+           ? result_type(
+               in_place, detail::invoke(detail::forward<Fn>(fn), static_cast<T &&>(m_storage.storage.m_value)))
+           : result_type(in_place_error, static_cast<E &&>(m_storage.storage.m_error));
 }
 
 //=============================================================================
@@ -4446,101 +4313,89 @@ inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
 
 template <typename E>
 inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<void, E>::result() noexcept
-  : m_storage(in_place)
-{}
+  : m_storage(in_place) {}
 
 template <typename E>
 template <typename U, typename E2, typename>
-inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::result<void, E>::result(const result<U, E2>& other) noexcept(
-  std::is_nothrow_constructible<E, const E2&>::value)
-  : m_storage(detail::unit{})
-{
-  m_storage.construct_error_from_result(static_cast<const result<U, E2>&>(other).m_storage);
+inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::result<void, E>::result(const result<U, E2> &other) noexcept(
+  std::is_nothrow_constructible<E, const E2 &>::value)
+  : m_storage(detail::unit{}) {
+  m_storage.construct_error_from_result(static_cast<const result<U, E2> &>(other).m_storage);
 }
 
 template <typename E>
 template <typename U, typename E2, typename>
-inline RESULT_INLINE_VISIBILITY
-  RESULT_NS_IMPL::result<void, E>::result(result<U, E2>&& other) noexcept(std::is_nothrow_constructible<E, E2&&>::value)
-  : m_storage(detail::unit{})
-{
-  m_storage.construct_error_from_result(static_cast<result<U, E2>&&>(other).m_storage);
+inline RESULT_INLINE_VISIBILITY RESULT_NS_IMPL::result<void, E>::result(result<U, E2> &&other) noexcept(
+  std::is_nothrow_constructible<E, E2 &&>::value)
+  : m_storage(detail::unit{}) {
+  m_storage.construct_error_from_result(static_cast<result<U, E2> &&>(other).m_storage);
 }
 
 //-----------------------------------------------------------------------------
 
 template <typename E>
 inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<void, E>::result(in_place_t) noexcept
-  : m_storage(in_place)
-{}
+  : m_storage(in_place) {}
 
 template <typename E>
 template <typename... Args, typename>
 inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<void, E>::result(
-  in_place_error_t, Args&&... args) noexcept(std::is_nothrow_constructible<E, Args...>::value)
-  : m_storage(in_place_error, detail::forward<Args>(args)...)
-{}
+  in_place_error_t, Args &&...args) noexcept(std::is_nothrow_constructible<E, Args...>::value)
+  : m_storage(in_place_error, detail::forward<Args>(args)...) {}
 
 template <typename E>
 template <typename U, typename... Args, typename>
 inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<void, E>::result(
   in_place_error_t,
   std::initializer_list<U> ilist,
-  Args&&... args) noexcept(std::is_nothrow_constructible<E, std::initializer_list<U>, Args...>::value)
-  : m_storage(in_place_error, ilist, detail::forward<Args>(args)...)
-{}
+  Args &&...args) noexcept(std::is_nothrow_constructible<E, std::initializer_list<U>, Args...>::value)
+  : m_storage(in_place_error, ilist, detail::forward<Args>(args)...) {}
 
 //-----------------------------------------------------------------------------
 
 template <typename E>
 template <typename E2, typename>
-inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<void, E>::result(const failure<E2>& e) noexcept(
-  std::is_nothrow_constructible<E, const E2&>::value)
-  : m_storage(in_place_error, e.error())
-{}
+inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<void, E>::result(const failure<E2> &e) noexcept(
+  std::is_nothrow_constructible<E, const E2 &>::value)
+  : m_storage(in_place_error, e.error()) {}
 
 template <typename E>
 template <typename E2, typename>
-inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<void, E>::result(failure<E2>&& e) noexcept(
-  std::is_nothrow_constructible<E, E2&&>::value)
-  : m_storage(in_place_error, static_cast<E2&&>(e.error()))
-{}
+inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<void, E>::result(failure<E2> &&e) noexcept(
+  std::is_nothrow_constructible<E, E2 &&>::value)
+  : m_storage(in_place_error, static_cast<E2 &&>(e.error())) {}
 
 //-----------------------------------------------------------------------------
 
 template <typename E>
 template <typename E2, typename>
-inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<void, E>::operator=(const result<void, E2>& other) noexcept(
-  std::is_nothrow_assignable<E, const E2&>::value) -> result&
-{
+inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<void, E>::operator=(const result<void, E2> &other) noexcept(
+  std::is_nothrow_assignable<E, const E2 &>::value) -> result & {
   m_storage.assign_from_result(other.m_storage);
   return (*this);
 }
 
 template <typename E>
 template <typename E2, typename>
-inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<void, E>::operator=(result<void, E2>&& other) noexcept(
-  std::is_nothrow_assignable<E, E2&&>::value) -> result&
-{
-  m_storage.assign_from_result(static_cast<result<void, E2>&&>(other).m_storage);
+inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<void, E>::operator=(result<void, E2> &&other) noexcept(
+  std::is_nothrow_assignable<E, E2 &&>::value) -> result & {
+  m_storage.assign_from_result(static_cast<result<void, E2> &&>(other).m_storage);
   return (*this);
 }
 
 template <typename E>
 template <typename E2, typename>
-inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<void, E>::operator=(const failure<E2>& other) noexcept(
-  std::is_nothrow_assignable<E, const E2&>::value) -> result&
-{
+inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<void, E>::operator=(const failure<E2> &other) noexcept(
+  std::is_nothrow_assignable<E, const E2 &>::value) -> result & {
   m_storage.assign_error(other.error());
   return (*this);
 }
 
 template <typename E>
 template <typename E2, typename>
-inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<void, E>::operator=(failure<E2>&& other) noexcept(
-  std::is_nothrow_assignable<E, E2&&>::value) -> result&
-{
-  m_storage.assign_error(static_cast<E2&&>(other.error()));
+inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<void, E>::operator=(failure<E2> &&other) noexcept(
+  std::is_nothrow_assignable<E, E2 &&>::value) -> result & {
+  m_storage.assign_error(static_cast<E2 &&>(other.error()));
   return (*this);
 }
 
@@ -4549,70 +4404,61 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::result<void, E>::operator=(
 //-----------------------------------------------------------------------------
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<void, E>::operator bool() const noexcept
-{
+inline RESULT_INLINE_VISIBILITY constexpr RESULT_NS_IMPL::result<void, E>::operator bool() const noexcept {
   return has_value();
 }
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<void, E>::has_value() const noexcept -> bool
-{
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<void, E>::has_value() const noexcept -> bool {
   return m_storage.storage.m_has_value;
 }
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<void, E>::has_error() const noexcept -> bool
-{
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<void, E>::has_error() const noexcept -> bool {
   return !has_value();
 }
 
 //-----------------------------------------------------------------------------
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<void, E>::value() const& -> void
-{
+inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<void, E>::value() const & -> void {
   static_cast<void>(has_value() || (detail::throw_bad_result_access(m_storage.storage.m_error), true));
 }
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<void, E>::value() && -> void
-{
+inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<void, E>::value() && -> void {
   static_cast<void>(
-    has_value() || (detail::throw_bad_result_access(static_cast<E&&>(m_storage.storage.m_error)), true));
+    has_value() || (detail::throw_bad_result_access(static_cast<E &&>(m_storage.storage.m_error)), true));
 }
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<void, E>::error() const& noexcept(
-  std::is_nothrow_constructible<E>::value && std::is_nothrow_copy_constructible<E>::value) -> E
-{
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<void, E>::error() const & noexcept(
+  std::is_nothrow_constructible<E>::value && std::is_nothrow_copy_constructible<E>::value) -> E {
   return has_value() ? E{} : m_storage.storage.m_error;
 }
 
 template <typename E>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<void, E>::error() && noexcept(
-  std::is_nothrow_constructible<E>::value && std::is_nothrow_copy_constructible<E>::value) -> E
-{
-  return has_value() ? E{} : static_cast<E&&>(m_storage.storage.m_error);
+  std::is_nothrow_constructible<E>::value && std::is_nothrow_copy_constructible<E>::value) -> E {
+  return has_value() ? E{} : static_cast<E &&>(m_storage.storage.m_error);
 }
 
 //-----------------------------------------------------------------------------
 
 template <typename E>
 template <typename String, typename>
-inline RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<void, E>::expect(String&& message) const& -> void
-{
+inline RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<void, E>::expect(String &&message) const & -> void {
   if (has_error())
     detail::throw_bad_result_access_message(detail::forward<String>(message), m_storage.storage.m_error);
 }
 
 template <typename E>
 template <typename String, typename>
-inline RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<void, E>::expect(String&& message) && -> void
-{
+inline RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<void, E>::expect(String &&message) && -> void {
   if (has_error())
     {
       detail::throw_bad_result_access_message(
-        detail::forward<String>(message), static_cast<E&&>(m_storage.storage.m_error));
+        detail::forward<String>(message), static_cast<E &&>(m_storage.storage.m_error));
     }
 }
 
@@ -4623,24 +4469,21 @@ inline RESULT_CPP14_CONSTEXPR auto RESULT_NS_IMPL::result<void, E>::expect(Strin
 template <typename E>
 template <typename U>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::result<void, E>::error_or(U&& default_error) const& -> error_type
-{
+  RESULT_NS_IMPL::result<void, E>::error_or(U &&default_error) const & -> error_type {
   return has_value() ? detail::forward<U>(default_error) : m_storage.storage.m_error;
 }
 
 template <typename E>
 template <typename U>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
-  RESULT_NS_IMPL::result<void, E>::error_or(U&& default_error) && -> error_type
-{
-  return has_value() ? detail::forward<U>(default_error) : static_cast<E&&>(m_storage.storage.m_error);
+  RESULT_NS_IMPL::result<void, E>::error_or(U &&default_error) && -> error_type {
+  return has_value() ? detail::forward<U>(default_error) : static_cast<E &&>(m_storage.storage.m_error);
 }
 
 template <typename E>
 template <typename U>
-inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<void, E>::and_then(U&& value) const
-  -> result<typename std::decay<U>::type, E>
-{
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<void, E>::and_then(U &&value) const
+  -> result<typename std::decay<U>::type, E> {
   return map([&value] { return detail::forward<U>(value); });
 }
 
@@ -4649,8 +4492,7 @@ inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<void, E>::
 template <typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::result<void, E>::flat_map(Fn&& fn) const& -> detail::invoke_result_t<Fn>
-{
+  RESULT_NS_IMPL::result<void, E>::flat_map(Fn &&fn) const & -> detail::invoke_result_t<Fn> {
   using result_type = detail::invoke_result_t<Fn>;
 
   static_assert(is_result<result_type>::value, "flat_map must return a result type or the program is ill-formed");
@@ -4661,21 +4503,19 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 template <typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
-  RESULT_NS_IMPL::result<void, E>::flat_map(Fn&& fn) && -> detail::invoke_result_t<Fn>
-{
+  RESULT_NS_IMPL::result<void, E>::flat_map(Fn &&fn) && -> detail::invoke_result_t<Fn> {
   using result_type = detail::invoke_result_t<Fn>;
 
   static_assert(is_result<result_type>::value, "flat_map must return a result type or the program is ill-formed");
 
   return has_value() ? detail::invoke(detail::forward<Fn>(fn))
-                     : result_type(in_place_error, static_cast<E&&>(m_storage.storage.m_error));
+                     : result_type(in_place_error, static_cast<E &&>(m_storage.storage.m_error));
 }
 
 template <typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::result<void, E>::map(Fn&& fn) const& -> result<detail::invoke_result_t<Fn>, E>
-{
+  RESULT_NS_IMPL::result<void, E>::map(Fn &&fn) const & -> result<detail::invoke_result_t<Fn>, E> {
   using result_type = detail::invoke_result_t<Fn>;
 
   return map_impl(std::is_void<result_type>{}, detail::forward<Fn>(fn));
@@ -4684,11 +4524,10 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 template <typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
-  RESULT_NS_IMPL::result<void, E>::map(Fn&& fn) && -> result<detail::invoke_result_t<Fn>, E>
-{
+  RESULT_NS_IMPL::result<void, E>::map(Fn &&fn) && -> result<detail::invoke_result_t<Fn>, E> {
   using result_type = detail::invoke_result_t<Fn>;
 
-  return static_cast<result<void, E>&&>(*this).map_impl(std::is_void<result_type>{}, detail::forward<Fn>(fn));
+  return static_cast<result<void, E> &&>(*this).map_impl(std::is_void<result_type>{}, detail::forward<Fn>(fn));
 }
 
 //-----------------------------------------------------------------------------
@@ -4696,9 +4535,8 @@ inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
 template <typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::result<void, E>::map_error(Fn&& fn) const& -> result<void, detail::invoke_result_t<Fn, const E&>>
-{
-  using result_type = result<void, detail::invoke_result_t<Fn, const E&>>;
+  RESULT_NS_IMPL::result<void, E>::map_error(Fn &&fn) const & -> result<void, detail::invoke_result_t<Fn, const E &>> {
+  using result_type = result<void, detail::invoke_result_t<Fn, const E &>>;
 
   return has_value() ? result_type{}
                      : result_type(in_place_error, detail::invoke(detail::forward<Fn>(fn), m_storage.storage.m_error));
@@ -4707,27 +4545,26 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 template <typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
-  RESULT_NS_IMPL::result<void, E>::map_error(Fn&& fn) && -> result<void, detail::invoke_result_t<Fn, E&&>>
-{
-  using result_type = result<void, detail::invoke_result_t<Fn, E&&>>;
+  RESULT_NS_IMPL::result<void, E>::map_error(Fn &&fn) && -> result<void, detail::invoke_result_t<Fn, E &&>> {
+  using result_type = result<void, detail::invoke_result_t<Fn, E &&>>;
 
   return has_value()
            ? result_type{}
            : result_type(
-               in_place_error, detail::invoke(detail::forward<Fn>(fn), static_cast<E&&>(m_storage.storage.m_error)));
+               in_place_error, detail::invoke(detail::forward<Fn>(fn), static_cast<E &&>(m_storage.storage.m_error)));
 }
 
 template <typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::result<void, E>::flat_map_error(Fn&& fn) const& -> detail::invoke_result_t<Fn, const E&>
-{
-  using result_type = detail::invoke_result_t<Fn, const E&>;
+  RESULT_NS_IMPL::result<void, E>::flat_map_error(Fn &&fn) const & -> detail::invoke_result_t<Fn, const E &> {
+  using result_type = detail::invoke_result_t<Fn, const E &>;
 
   static_assert(is_result<result_type>::value, "flat_map_error must return a result type or the program is ill-formed");
   static_assert(
     std::is_default_constructible<typename result_type::value_type>::value,
-    "flat_map_error for result<void,E> requires the new T type to be default-"
+    "flat_map_error for result<void,E> requires the new T type to be "
+    "default-"
     "constructible");
 
   return has_value() ? result_type{} : detail::invoke(detail::forward<Fn>(fn), m_storage.storage.m_error);
@@ -4736,18 +4573,18 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 template <typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
-  RESULT_NS_IMPL::result<void, E>::flat_map_error(Fn&& fn) && -> detail::invoke_result_t<Fn, E&&>
-{
-  using result_type = detail::invoke_result_t<Fn, E&&>;
+  RESULT_NS_IMPL::result<void, E>::flat_map_error(Fn &&fn) && -> detail::invoke_result_t<Fn, E &&> {
+  using result_type = detail::invoke_result_t<Fn, E &&>;
 
   static_assert(is_result<result_type>::value, "flat_map_error must return a result type or the program is ill-formed");
   static_assert(
     std::is_default_constructible<typename result_type::value_type>::value,
-    "flat_map_error for result<void,E> requires the new T type to be default-"
+    "flat_map_error for result<void,E> requires the new T type to be "
+    "default-"
     "constructible");
 
   return has_value() ? result_type{}
-                     : detail::invoke(detail::forward<Fn>(fn), static_cast<E&&>(m_storage.storage.m_error));
+                     : detail::invoke(detail::forward<Fn>(fn), static_cast<E &&>(m_storage.storage.m_error));
 }
 
 //-----------------------------------------------------------------------------
@@ -4757,8 +4594,7 @@ inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
 template <typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::result<void, E>::map_impl(std::true_type, Fn&& fn) const& -> result<void, E>
-{
+  RESULT_NS_IMPL::result<void, E>::map_impl(std::true_type, Fn &&fn) const & -> result<void, E> {
   using result_type = result<void, E>;
 
   return has_value() ? (detail::invoke(detail::forward<Fn>(fn)), result_type{})
@@ -4767,9 +4603,8 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 
 template <typename E>
 template <typename Fn>
-inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::result<void, E>::map_impl(std::false_type, Fn&& fn) const& -> result<detail::invoke_result_t<Fn>, E>
-{
+inline RESULT_INLINE_VISIBILITY constexpr auto RESULT_NS_IMPL::result<void, E>::map_impl(
+  std::false_type, Fn &&fn) const & -> result<detail::invoke_result_t<Fn>, E> {
   using invoke_result_type = detail::invoke_result_t<Fn>;
   using result_type        = result<invoke_result_type, E>;
 
@@ -4780,24 +4615,22 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 template <typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
-  RESULT_NS_IMPL::result<void, E>::map_impl(std::true_type, Fn&& fn) && -> result<void, E>
-{
+  RESULT_NS_IMPL::result<void, E>::map_impl(std::true_type, Fn &&fn) && -> result<void, E> {
   using result_type = result<void, E>;
 
   return has_value() ? (detail::invoke(detail::forward<Fn>(fn)), result_type{})
-                     : result_type(in_place_error, static_cast<E&&>(m_storage.storage.m_error));
+                     : result_type(in_place_error, static_cast<E &&>(m_storage.storage.m_error));
 }
 
 template <typename E>
 template <typename Fn>
 inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
-  RESULT_NS_IMPL::result<void, E>::map_impl(std::false_type, Fn&& fn) && -> result<detail::invoke_result_t<Fn>, E>
-{
+  RESULT_NS_IMPL::result<void, E>::map_impl(std::false_type, Fn &&fn) && -> result<detail::invoke_result_t<Fn>, E> {
   using invoke_result_type = detail::invoke_result_t<Fn>;
   using result_type        = result<invoke_result_type, E>;
 
   return has_value() ? result_type(in_place, detail::invoke(detail::forward<Fn>(fn)))
-                     : result_type(in_place_error, static_cast<E&&>(m_storage.storage.m_error));
+                     : result_type(in_place_error, static_cast<E &&>(m_storage.storage.m_error));
 }
 
 //=============================================================================
@@ -4810,8 +4643,7 @@ inline RESULT_INLINE_VISIBILITY RESULT_CPP14_CONSTEXPR auto
 
 template <typename T1, typename E1, typename T2, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator==(const result<T1, E1>& lhs, const result<T2, E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator==(const result<T1, E1> &lhs, const result<T2, E2> &rhs) noexcept -> bool {
   return (lhs.has_value() == rhs.has_value())
            ? (lhs.has_value() ? *lhs == *rhs : detail::extract_error(lhs) == detail::extract_error(rhs))
            : false;
@@ -4819,8 +4651,7 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 
 template <typename T1, typename E1, typename T2, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator!=(const result<T1, E1>& lhs, const result<T2, E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator!=(const result<T1, E1> &lhs, const result<T2, E2> &rhs) noexcept -> bool {
   return (lhs.has_value() == rhs.has_value())
            ? (lhs.has_value() ? *lhs != *rhs : detail::extract_error(lhs) != detail::extract_error(rhs))
            : true;
@@ -4828,8 +4659,7 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 
 template <typename T1, typename E1, typename T2, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator>=(const result<T1, E1>& lhs, const result<T2, E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator>=(const result<T1, E1> &lhs, const result<T2, E2> &rhs) noexcept -> bool {
   return (lhs.has_value() == rhs.has_value())
            ? (lhs.has_value() ? *lhs >= *rhs : detail::extract_error(lhs) >= detail::extract_error(rhs))
            : static_cast<int>(static_cast<bool>(lhs)) >= static_cast<int>(static_cast<bool>(rhs));
@@ -4837,8 +4667,7 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 
 template <typename T1, typename E1, typename T2, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator<=(const result<T1, E1>& lhs, const result<T2, E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator<=(const result<T1, E1> &lhs, const result<T2, E2> &rhs) noexcept -> bool {
   return (lhs.has_value() == rhs.has_value())
            ? (lhs.has_value() ? *lhs <= *rhs : detail::extract_error(lhs) <= detail::extract_error(rhs))
            : static_cast<int>(static_cast<bool>(lhs)) <= static_cast<int>(static_cast<bool>(rhs));
@@ -4846,8 +4675,7 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 
 template <typename T1, typename E1, typename T2, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator>(const result<T1, E1>& lhs, const result<T2, E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator>(const result<T1, E1> &lhs, const result<T2, E2> &rhs) noexcept -> bool {
   return (lhs.has_value() == rhs.has_value())
            ? (lhs.has_value() ? *lhs > *rhs : detail::extract_error(lhs) > detail::extract_error(rhs))
            : static_cast<int>(static_cast<bool>(lhs)) > static_cast<int>(static_cast<bool>(rhs));
@@ -4855,8 +4683,7 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 
 template <typename T1, typename E1, typename T2, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator<(const result<T1, E1>& lhs, const result<T2, E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator<(const result<T1, E1> &lhs, const result<T2, E2> &rhs) noexcept -> bool {
   return (lhs.has_value() == rhs.has_value())
            ? (lhs.has_value() ? *lhs < *rhs : detail::extract_error(lhs) < detail::extract_error(rhs))
            : static_cast<int>(static_cast<bool>(lhs)) < static_cast<int>(static_cast<bool>(rhs));
@@ -4866,8 +4693,7 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 
 template <typename E1, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator==(const result<void, E1>& lhs, const result<void, E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator==(const result<void, E1> &lhs, const result<void, E2> &rhs) noexcept -> bool {
   return lhs.has_value() == rhs.has_value()
            ? (lhs.has_value() ? true : detail::extract_error(lhs) == detail::extract_error(rhs))
            : false;
@@ -4875,8 +4701,7 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 
 template <typename E1, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator!=(const result<void, E1>& lhs, const result<void, E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator!=(const result<void, E1> &lhs, const result<void, E2> &rhs) noexcept -> bool {
   return lhs.has_value() == rhs.has_value()
            ? (lhs.has_value() ? false : detail::extract_error(lhs) != detail::extract_error(rhs))
            : true;
@@ -4884,8 +4709,7 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 
 template <typename E1, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator>=(const result<void, E1>& lhs, const result<void, E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator>=(const result<void, E1> &lhs, const result<void, E2> &rhs) noexcept -> bool {
   return lhs.has_value() == rhs.has_value()
            ? (lhs.has_value() ? true : detail::extract_error(lhs) >= detail::extract_error(rhs))
            : static_cast<int>(static_cast<bool>(lhs)) >= static_cast<int>(static_cast<bool>(rhs));
@@ -4893,8 +4717,7 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 
 template <typename E1, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator<=(const result<void, E1>& lhs, const result<void, E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator<=(const result<void, E1> &lhs, const result<void, E2> &rhs) noexcept -> bool {
   return lhs.has_value() == rhs.has_value()
            ? (lhs.has_value() ? true : detail::extract_error(lhs) <= detail::extract_error(rhs))
            : static_cast<int>(static_cast<bool>(lhs)) <= static_cast<int>(static_cast<bool>(rhs));
@@ -4902,8 +4725,7 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 
 template <typename E1, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator>(const result<void, E1>& lhs, const result<void, E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator>(const result<void, E1> &lhs, const result<void, E2> &rhs) noexcept -> bool {
   return lhs.has_value() == rhs.has_value()
            ? (lhs.has_value() ? false : detail::extract_error(lhs) > detail::extract_error(rhs))
            : static_cast<int>(static_cast<bool>(lhs)) > static_cast<int>(static_cast<bool>(rhs));
@@ -4911,8 +4733,7 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 
 template <typename E1, typename E2>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator<(const result<void, E1>& lhs, const result<void, E2>& rhs) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator<(const result<void, E1> &lhs, const result<void, E2> &rhs) noexcept -> bool {
   return lhs.has_value() == rhs.has_value()
            ? (lhs.has_value() ? false : detail::extract_error(lhs) < detail::extract_error(rhs))
            : static_cast<int>(static_cast<bool>(lhs)) < static_cast<int>(static_cast<bool>(rhs));
@@ -4922,85 +4743,73 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 
 template <typename T, typename E, typename U, typename>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator==(const result<T, E>& exp, const U& value) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator==(const result<T, E> &exp, const U &value) noexcept -> bool {
   return (exp.has_value() && *exp == value);
 }
 
 template <typename T, typename U, typename E, typename>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator==(const T& value, const result<U, E>& exp) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator==(const T &value, const result<U, E> &exp) noexcept -> bool {
   return (exp.has_value() && *exp == value);
 }
 
 template <typename T, typename E, typename U, typename>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator!=(const result<T, E>& exp, const U& value) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator!=(const result<T, E> &exp, const U &value) noexcept -> bool {
   return exp.has_value() ? *exp != value : true;
 }
 
 template <typename T, typename U, typename E, typename>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator!=(const T& value, const result<U, E>& exp) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator!=(const T &value, const result<U, E> &exp) noexcept -> bool {
   return exp.has_value() ? value != *exp : true;
 }
 
 template <typename T, typename E, typename U, typename>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator<=(const result<T, E>& exp, const U& value) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator<=(const result<T, E> &exp, const U &value) noexcept -> bool {
   return exp.has_value() ? *exp <= value : false;
 }
 
 template <typename T, typename U, typename E, typename>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator<=(const T& value, const result<U, E>& exp) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator<=(const T &value, const result<U, E> &exp) noexcept -> bool {
   return exp.has_value() ? value <= *exp : true;
 }
 
 template <typename T, typename E, typename U, typename>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator>=(const result<T, E>& exp, const U& value) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator>=(const result<T, E> &exp, const U &value) noexcept -> bool {
   return exp.has_value() ? *exp >= value : true;
 }
 
 template <typename T, typename U, typename E, typename>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator>=(const T& value, const result<U, E>& exp) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator>=(const T &value, const result<U, E> &exp) noexcept -> bool {
   return exp.has_value() ? value >= *exp : false;
 }
 
 template <typename T, typename E, typename U, typename>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator<(const result<T, E>& exp, const U& value) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator<(const result<T, E> &exp, const U &value) noexcept -> bool {
   return exp.has_value() ? *exp < value : false;
 }
 
 template <typename T, typename U, typename E, typename>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator<(const T& value, const result<U, E>& exp) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator<(const T &value, const result<U, E> &exp) noexcept -> bool {
   return exp.has_value() ? value < *exp : true;
 }
 
 template <typename T, typename E, typename U, typename>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator>(const result<T, E>& exp, const U& value) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator>(const result<T, E> &exp, const U &value) noexcept -> bool {
   return exp.has_value() ? *exp > value : false;
 }
 
 template <typename T, typename U, typename E, typename>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator>(const T& value, const result<U, E>& exp) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator>(const T &value, const result<U, E> &exp) noexcept -> bool {
   return exp.has_value() ? value > *exp : true;
 }
 
@@ -5008,85 +4817,73 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 
 template <typename T, typename E, typename U>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator==(const result<T, E>& exp, const failure<U>& error) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator==(const result<T, E> &exp, const failure<U> &error) noexcept -> bool {
   return exp.has_error() ? detail::extract_error(exp) == error.error() : false;
 }
 
 template <typename T, typename U, typename E>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator==(const failure<T>& error, const result<E, U>& exp) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator==(const failure<T> &error, const result<E, U> &exp) noexcept -> bool {
   return exp.has_error() ? error.error() == detail::extract_error(exp) : false;
 }
 
 template <typename T, typename E, typename U>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator!=(const result<T, E>& exp, const failure<U>& error) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator!=(const result<T, E> &exp, const failure<U> &error) noexcept -> bool {
   return exp.has_error() ? detail::extract_error(exp) != error.error() : true;
 }
 
 template <typename T, typename U, typename E>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator!=(const failure<T>& error, const result<E, U>& exp) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator!=(const failure<T> &error, const result<E, U> &exp) noexcept -> bool {
   return exp.has_error() ? error.error() != detail::extract_error(exp) : true;
 }
 
 template <typename T, typename E, typename U>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator<=(const result<T, E>& exp, const failure<U>& error) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator<=(const result<T, E> &exp, const failure<U> &error) noexcept -> bool {
   return exp.has_error() ? detail::extract_error(exp) <= error.error() : true;
 }
 
 template <typename T, typename U, typename E>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator<=(const failure<T>& error, const result<E, U>& exp) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator<=(const failure<T> &error, const result<E, U> &exp) noexcept -> bool {
   return exp.has_error() ? error.error() <= detail::extract_error(exp) : false;
 }
 
 template <typename T, typename E, typename U>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator>=(const result<T, E>& exp, const failure<U>& error) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator>=(const result<T, E> &exp, const failure<U> &error) noexcept -> bool {
   return exp.has_error() ? detail::extract_error(exp) >= error.error() : false;
 }
 
 template <typename T, typename U, typename E>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator>=(const failure<T>& error, const result<E, U>& exp) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator>=(const failure<T> &error, const result<E, U> &exp) noexcept -> bool {
   return exp.has_error() ? error.error() >= detail::extract_error(exp) : true;
 }
 
 template <typename T, typename E, typename U>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator<(const result<T, E>& exp, const failure<U>& error) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator<(const result<T, E> &exp, const failure<U> &error) noexcept -> bool {
   return exp.has_error() ? detail::extract_error(exp) < error.error() : true;
 }
 
 template <typename T, typename U, typename E>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator<(const failure<T>& error, const result<E, U>& exp) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator<(const failure<T> &error, const result<E, U> &exp) noexcept -> bool {
   return exp.has_error() ? error.error() < detail::extract_error(exp) : false;
 }
 
 template <typename T, typename E, typename U>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator>(const result<T, E>& exp, const failure<U>& error) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator>(const result<T, E> &exp, const failure<U> &error) noexcept -> bool {
   return exp.has_error() ? detail::extract_error(exp) > error.error() : false;
 }
 
 template <typename T, typename U, typename E>
 inline RESULT_INLINE_VISIBILITY constexpr auto
-  RESULT_NS_IMPL::operator>(const failure<T>& error, const result<E, U>& exp) noexcept -> bool
-{
+  RESULT_NS_IMPL::operator>(const failure<T> &error, const result<E, U> &exp) noexcept -> bool {
   return exp.has_error() ? error.error() > detail::extract_error(exp) : true;
 }
 
@@ -5095,7 +4892,7 @@ inline RESULT_INLINE_VISIBILITY constexpr auto
 //-----------------------------------------------------------------------------
 
 template <typename T, typename E>
-inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::swap(result<T, E>& lhs, result<T, E>& rhs)
+inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::swap(result<T, E> &lhs, result<T, E> &rhs)
 #if __cplusplus >= 201703L
   noexcept(
     std::is_nothrow_move_constructible<result<T, E>>::value && std::is_nothrow_move_assignable<result<T, E>>::value
@@ -5104,8 +4901,7 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::swap(result<T, E>& lhs, res
   noexcept(
     std::is_nothrow_move_constructible<result<T, E>>::value && std::is_nothrow_move_assignable<result<T, E>>::value)
 #endif
-    -> void
-{
+    -> void {
   using std::swap;
 
   if (lhs.has_value() == rhs.has_value())
@@ -5116,8 +4912,8 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::swap(result<T, E>& lhs, res
         }
       else
         {
-          auto& lhs_error = detail::result_error_extractor::get(lhs);
-          auto& rhs_error = detail::result_error_extractor::get(rhs);
+          auto &lhs_error = detail::result_error_extractor::get(lhs);
+          auto &rhs_error = detail::result_error_extractor::get(rhs);
 
           swap(lhs_error, rhs_error);
         }
@@ -5125,14 +4921,14 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::swap(result<T, E>& lhs, res
     }
   else
     {
-      auto temp = static_cast<result<T, E>&&>(lhs);
-      lhs       = static_cast<result<T, E>&&>(rhs);
-      rhs       = static_cast<result<T, E>&&>(temp);
+      auto temp = static_cast<result<T, E> &&>(lhs);
+      lhs       = static_cast<result<T, E> &&>(rhs);
+      rhs       = static_cast<result<T, E> &&>(temp);
     }
 }
 
 template <typename E>
-inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::swap(result<void, E>& lhs, result<void, E>& rhs)
+inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::swap(result<void, E> &lhs, result<void, E> &rhs)
 #if __cplusplus >= 201703L
   noexcept(
     std::is_nothrow_move_constructible<result<void, E>>::value
@@ -5142,16 +4938,15 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::swap(result<void, E>& lhs, 
     std::is_nothrow_move_constructible<result<void, E>>::value
     && std::is_nothrow_move_assignable<result<void, E>>::value)
 #endif
-    -> void
-{
+    -> void {
   using std::swap;
 
   if (lhs.has_value() == rhs.has_value())
     {
       if (lhs.has_error())
         {
-          auto& lhs_error = detail::result_error_extractor::get(lhs);
-          auto& rhs_error = detail::result_error_extractor::get(rhs);
+          auto &lhs_error = detail::result_error_extractor::get(lhs);
+          auto &rhs_error = detail::result_error_extractor::get(rhs);
 
           swap(lhs_error, rhs_error);
         }
@@ -5159,9 +4954,9 @@ inline RESULT_INLINE_VISIBILITY auto RESULT_NS_IMPL::swap(result<void, E>& lhs, 
     }
   else
     {
-      auto temp = static_cast<result<void, E>&&>(lhs);
-      lhs       = static_cast<result<void, E>&&>(rhs);
-      rhs       = static_cast<result<void, E>&&>(temp);
+      auto temp = static_cast<result<void, E> &&>(lhs);
+      lhs       = static_cast<result<void, E> &&>(rhs);
+      rhs       = static_cast<result<void, E> &&>(temp);
     }
 }
 

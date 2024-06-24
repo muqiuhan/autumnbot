@@ -1,19 +1,17 @@
 #ifndef AUTUMNBOT_SERVICES_HPP
 #define AUTUMNBOT_SERVICES_HPP
 
-#include "plugins/logger/logger.hpp"
-#include "root/root.hpp"
-#include "errors/errors.hpp"
 #include <map>
 
-namespace autumnbot::services
-{
-  class Service
-  {
+#include "errors/errors.hpp"
+#include "plugins/logger/logger.hpp"
+#include "root/root.hpp"
+
+namespace autumnbot::services {
+  class Service {
   public:
     explicit Service(std::string serviceName)
-      : Log(plugins::logger::Logger{"service", std::move(serviceName)})
-    {}
+      : Log(plugins::logger::Logger{"service", std::move(serviceName)}) {}
 
     virtual ~Service()                                           = default;
     virtual auto Start() noexcept -> result<void, errors::Error> = 0;
@@ -23,12 +21,10 @@ namespace autumnbot::services
     plugins::logger::Logger Log;
   };
 
-  class ServiceManager
-  {
+  class ServiceManager {
   public:
     explicit ServiceManager(const std::map<std::string, Service *> &services)
-      : Services(services)
-    {
+      : Services(services) {
       logging::info("[service] <ServiceManager>: start services...");
 
       for (const auto &[name, service] : Services)
@@ -42,8 +38,7 @@ namespace autumnbot::services
       logging::info("[service] <ServiceManager>: done");
     }
 
-    ~ServiceManager()
-    {
+    ~ServiceManager() {
       logging::info("[service] <ServiceManager>: end services...");
 
       for (const auto &[name, service] : Services)

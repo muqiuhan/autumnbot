@@ -7,26 +7,26 @@ VV=@
 endif
 
 CXX=/usr/bin/gcc
-AS=/usr/bin/gcc
-CU=/usr/bin/clang
-CC=/usr/bin/gcc
-MM=/usr/bin/gcc
 MXX=/usr/bin/gcc
 RC=/home/muqiu/.cargo/bin/rustc
+CU=/usr/bin/clang
+CC=/usr/bin/gcc
+AS=/usr/bin/gcc
+MM=/usr/bin/gcc
 
-RCSH=/home/muqiu/.cargo/bin/rustc
-SH=/usr/bin/g++
-RCLD=/home/muqiu/.cargo/bin/rustc
-LD=/usr/bin/g++
-RCAR=/home/muqiu/.cargo/bin/rustc
 AR=/usr/bin/ar
+RCAR=/home/muqiu/.cargo/bin/rustc
+SH=/usr/bin/g++
+RCSH=/home/muqiu/.cargo/bin/rustc
+LD=/usr/bin/g++
+RCLD=/home/muqiu/.cargo/bin/rustc
 
 autumnbot_LD=/usr/bin/g++
 autumnbot_CXX=/usr/bin/gcc
 autumnbot_CXX=/usr/bin/gcc
 
-autumnbot_CXXFLAGS=-m64 -g -O0 -std=c++20 -Isrc -DOPENSSL_LOAD_CONF -isystem /home/muqiu/.xmake/packages/s/spdlog/v1.14.1/469f312ffeff47d9aa249e3ed8e400dc/include -isystem /home/muqiu/.xmake/packages/n/nlohmann_json/v3.11.3/ec1183311a224b34b5c138edda96fdde/include -isystem /home/muqiu/.xmake/packages/o/opencv/4.10.0/07fff2ddbc8647d392e888cc2a12d4a4/include/opencv4 -isystem /home/muqiu/.xmake/packages/f/ffmpeg/7.0/927a7605f9ef47db9de73f45b4a37225/include -isystem /home/muqiu/.xmake/packages/l/libdrm/2.4.118/1b3643c7b5084929bfbf9a3bd621b192/include -isystem /home/muqiu/.xmake/packages/l/libdrm/2.4.118/1b3643c7b5084929bfbf9a3bd621b192/include/libdrm -isystem /home/muqiu/.xmake/packages/c/cpr/1.10.5/815208ce0ebc48d69649b40cf563b7c0/include -isystem /home/muqiu/.xmake/packages/l/libcurl/8.7.1/eb037cbc8bf3460aa31aea7c571a7311/include -static
 autumnbot_CXXFLAGS=
+autumnbot_CXXFLAGS=-m64 -g -O0 -std=c++20 -Isrc -DOPENSSL_LOAD_CONF -isystem /home/muqiu/.xmake/packages/s/spdlog/v1.14.1/469f312ffeff47d9aa249e3ed8e400dc/include -isystem /home/muqiu/.xmake/packages/n/nlohmann_json/v3.11.3/ec1183311a224b34b5c138edda96fdde/include -isystem /home/muqiu/.xmake/packages/o/opencv/4.10.0/07fff2ddbc8647d392e888cc2a12d4a4/include/opencv4 -isystem /home/muqiu/.xmake/packages/f/ffmpeg/7.0/927a7605f9ef47db9de73f45b4a37225/include -isystem /home/muqiu/.xmake/packages/l/libdrm/2.4.118/1b3643c7b5084929bfbf9a3bd621b192/include -isystem /home/muqiu/.xmake/packages/l/libdrm/2.4.118/1b3643c7b5084929bfbf9a3bd621b192/include/libdrm -isystem /home/muqiu/.xmake/packages/c/cpr/1.10.5/815208ce0ebc48d69649b40cf563b7c0/include -isystem /home/muqiu/.xmake/packages/l/libcurl/8.7.1/eb037cbc8bf3460aa31aea7c571a7311/include -static
 autumnbot_LDFLAGS=-m64 -L/home/muqiu/.xmake/packages/o/opencv/4.10.0/07fff2ddbc8647d392e888cc2a12d4a4/lib -L/home/muqiu/.xmake/packages/o/opencv/4.10.0/07fff2ddbc8647d392e888cc2a12d4a4/lib/opencv4/3rdparty -L/home/muqiu/.xmake/packages/f/ffmpeg/7.0/927a7605f9ef47db9de73f45b4a37225/lib -L/home/muqiu/.xmake/packages/l/libdrm/2.4.118/1b3643c7b5084929bfbf9a3bd621b192/lib -L/home/muqiu/.xmake/packages/c/cpr/1.10.5/815208ce0ebc48d69649b40cf563b7c0/lib -L/home/muqiu/.xmake/packages/l/libcurl/8.7.1/eb037cbc8bf3460aa31aea7c571a7311/lib -lopencv_phase_unwrapping -lopencv_surface_matching -lopencv_saliency -lopencv_wechat_qrcode -lopencv_mcc -lopencv_face -lopencv_img_hash -lopencv_videostab -lopencv_structured_light -lopencv_intensity_transform -lopencv_ccalib -lopencv_line_descriptor -lopencv_stereo -lopencv_dnn_objdetect -lopencv_dnn_superres -lopencv_fuzzy -lopencv_hfs -lopencv_rapid -lopencv_bgsegm -lopencv_bioinspired -lopencv_rgbd -lopencv_dpm -lopencv_aruco -lopencv_reg -lopencv_tracking -lopencv_datasets -lopencv_xfeatures2d -lopencv_shape -lopencv_superres -lopencv_plot -lopencv_quality -lopencv_text -lopencv_optflow -lopencv_ximgproc -lopencv_xobjdetect -lopencv_xphoto -lopencv_stitching -lopencv_ml -lopencv_photo -lopencv_gapi -lopencv_objdetect -lopencv_highgui -lopencv_videoio -lopencv_video -lopencv_calib3d -lopencv_dnn -lopencv_features2d -lopencv_flann -lopencv_imgcodecs -lopencv_imgproc -lopencv_core -lade -lzlib -llibjpeg-turbo -llibtiff -llibwebp -llibpng -llibprotobuf -lquirc -lavfilter -lavdevice -lavformat -lavcodec -lswscale -lswresample -lavutil -ldrm -ldrm_nouveau -ldrm_radeon -ldrm_amdgpu -lz -lcpr -lcurl -lssl -lcrypto -ldl -lpthread -Wl,-Bsymbolic
 
 default:  autumnbot

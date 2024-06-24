@@ -1,24 +1,23 @@
 #include "camera.hpp"
-#include "opencv2/core/mat.hpp"
-#include "opencv2/imgcodecs.hpp"
+
 #include <ctime>
 #include <format>
 #include <stop_token>
 #include <string>
 #include <thread>
 
-namespace autumnbot::services::camera
-{
-  auto Camera::End() noexcept -> result<void, errors::Error>
-  {
+#include "opencv2/core/mat.hpp"
+#include "opencv2/imgcodecs.hpp"
+
+namespace autumnbot::services::camera {
+  auto Camera::End() noexcept -> result<void, errors::Error> {
     Camera0.release();
     CameraSaverThread.request_stop();
     Log.Info("end");
     return {};
   }
 
-  auto Camera::Start() noexcept -> result<void, errors::Error>
-  {
+  auto Camera::Start() noexcept -> result<void, errors::Error> {
     Log.Info("start");
 
     if (!Camera0.open(0))
@@ -34,8 +33,7 @@ namespace autumnbot::services::camera
     return {};
   }
 
-  auto Camera::CameraSaver() noexcept -> result<void, errors::Error>
-  {
+  auto Camera::CameraSaver() noexcept -> result<void, errors::Error> {
     CameraSaverThread = std::jthread{[&](std::stop_token stopToken) {
       cv::Mat img{};
       while (!stopToken.stop_requested())
