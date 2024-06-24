@@ -3,6 +3,7 @@
 
 #include "opencv2/videoio.hpp"
 #include "services/services.hpp"
+#include <cstdlib>
 
 namespace autumnbot::services::camera
 {
@@ -21,8 +22,8 @@ namespace autumnbot::services::camera
     auto Start() noexcept -> result<void, errors::Error> override;
 
   private:
-    cv::VideoCapture Camera0;
-    std::jthread     CameraSaverThread;
+    cv::VideoCapture                Camera0;
+    std::jthread                    CameraSaverThread;
 
   private:
     auto CameraSaver() noexcept -> result<void, errors::Error>;

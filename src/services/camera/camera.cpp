@@ -1,7 +1,7 @@
 #include "camera.hpp"
 #include "opencv2/core/mat.hpp"
 #include "opencv2/imgcodecs.hpp"
-#include <chrono>
+#include <ctime>
 #include <format>
 #include <stop_token>
 #include <string>
@@ -20,7 +20,7 @@ namespace autumnbot::services::camera
   auto Camera::Start() noexcept -> result<void, errors::Error>
   {
     Log.Info("start");
-    
+
     if (!Camera0.open(0))
       Log.Fail("Unable to open camera");
 
@@ -37,13 +37,12 @@ namespace autumnbot::services::camera
   auto Camera::CameraSaver() noexcept -> result<void, errors::Error>
   {
     CameraSaverThread = std::jthread{[&](std::stop_token stopToken) {
+      cv::Mat img{};
       while (!stopToken.stop_requested())
         {
           while (true)
             {
-              cv::Mat img{};
-              auto    path = std::format("{}.png", std::chrono::seconds(std::time(nullptr)));
-
+              const auto path = std::format("camera.png", std::time(nullptr));
               Camera0.read(img);
               if (!img.empty())
                 {

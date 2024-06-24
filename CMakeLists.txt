@@ -12,7 +12,7 @@ set(CMAKE_C_COMPILER "/usr/bin/gcc")
 set(CMAKE_CXX_COMPILER "/usr/bin/g++")
 add_executable(autumnbot "")
 set_target_properties(autumnbot PROPERTIES OUTPUT_NAME "autumnbot")
-set_target_properties(autumnbot PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/linux/x86_64/release")
+set_target_properties(autumnbot PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/linux/x86_64/debug")
 target_include_directories(autumnbot PRIVATE
     src
 )
@@ -23,24 +23,28 @@ target_include_directories(autumnbot SYSTEM PRIVATE
     /home/muqiu/.xmake/packages/f/ffmpeg/7.0/927a7605f9ef47db9de73f45b4a37225/include
     /home/muqiu/.xmake/packages/l/libdrm/2.4.118/1b3643c7b5084929bfbf9a3bd621b192/include
     /home/muqiu/.xmake/packages/l/libdrm/2.4.118/1b3643c7b5084929bfbf9a3bd621b192/include/libdrm
+    /home/muqiu/.xmake/packages/c/cpr/1.10.5/815208ce0ebc48d69649b40cf563b7c0/include
+    /home/muqiu/.xmake/packages/l/libcurl/8.7.1/eb037cbc8bf3460aa31aea7c571a7311/include
+)
+target_compile_definitions(autumnbot PRIVATE
+    OPENSSL_LOAD_CONF
 )
 target_compile_options(autumnbot PRIVATE
     $<$<COMPILE_LANGUAGE:C>:-m64>
     $<$<COMPILE_LANGUAGE:CXX>:-m64>
-    $<$<COMPILE_LANGUAGE:C>:-DNDEBUG>
-    $<$<COMPILE_LANGUAGE:CXX>:-DNDEBUG>
     $<$<COMPILE_LANGUAGE:CXX>:-static>
 )
 set_target_properties(autumnbot PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_features(autumnbot PRIVATE cxx_std_20)
 if(MSVC)
-    target_compile_options(autumnbot PRIVATE $<$<CONFIG:Release>:-Ox -fp:fast>)
+    target_compile_options(autumnbot PRIVATE $<$<CONFIG:Debug>:-Od>)
 else()
-    target_compile_options(autumnbot PRIVATE -O3)
+    target_compile_options(autumnbot PRIVATE -O0)
 endif()
 if(MSVC)
+    target_compile_options(autumnbot PRIVATE -Zi)
 else()
-    target_compile_options(autumnbot PRIVATE -fvisibility=hidden)
+    target_compile_options(autumnbot PRIVATE -g)
 endif()
 if(MSVC)
     set_property(TARGET autumnbot PROPERTY
@@ -118,6 +122,10 @@ target_link_libraries(autumnbot PRIVATE
     drm_radeon
     drm_amdgpu
     z
+    cpr
+    curl
+    ssl
+    crypto
     pthread
     dl
 )
@@ -126,6 +134,8 @@ target_link_directories(autumnbot PRIVATE
     /home/muqiu/.xmake/packages/o/opencv/4.10.0/07fff2ddbc8647d392e888cc2a12d4a4/lib/opencv4/3rdparty
     /home/muqiu/.xmake/packages/f/ffmpeg/7.0/927a7605f9ef47db9de73f45b4a37225/lib
     /home/muqiu/.xmake/packages/l/libdrm/2.4.118/1b3643c7b5084929bfbf9a3bd621b192/lib
+    /home/muqiu/.xmake/packages/c/cpr/1.10.5/815208ce0ebc48d69649b40cf563b7c0/lib
+    /home/muqiu/.xmake/packages/l/libcurl/8.7.1/eb037cbc8bf3460aa31aea7c571a7311/lib
 )
 target_link_options(autumnbot PRIVATE
     -m64
@@ -138,5 +148,6 @@ target_sources(autumnbot PRIVATE
     src/plugins/plugins.cpp
     src/services/services.cpp
     src/services/camera/camera.cpp
+    src/services/ollama/ollama.cpp
 )
 

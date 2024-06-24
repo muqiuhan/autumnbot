@@ -7,6 +7,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <nlohmann/json.hpp>
+#include <cpr/cpr.h>
 #include "./result.hpp"
 
 using namespace cpp;

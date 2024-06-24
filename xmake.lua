@@ -4,7 +4,7 @@ set_version("0.0.1")
 add_rules("mode.debug", "mode.release")
 add_rules("plugin.compile_commands.autoupdate", {outputdir = "."})
 
-add_requires("spdlog", "nlohmann_json", "opencv", "zlib")
+add_requires("spdlog", "nlohmann_json", "opencv", "zlib", "cpr")
 
 target("autumnbot")
     set_kind("binary")
@@ -13,7 +13,7 @@ target("autumnbot")
     
     add_includedirs("src")
     add_files("src/*.cpp", "src/**/*.cpp")
-    add_packages("spdlog", "nlohmann_json", "opencv", "zlib")
+    add_packages("spdlog", "nlohmann_json", "opencv", "zlib", "cpr")
     add_cxxflags("-static")
 
     after_build(function (target)

@@ -4,6 +4,7 @@
 #include "plugins/logger/logger.hpp"
 #include "root/root.hpp"
 #include "errors/errors.hpp"
+#include <map>
 
 namespace autumnbot::services
 {
@@ -14,7 +15,7 @@ namespace autumnbot::services
       : Log(plugins::logger::Logger{"service", std::move(serviceName)})
     {}
 
-    virtual ~Service() = default;
+    virtual ~Service()                                           = default;
     virtual auto Start() noexcept -> result<void, errors::Error> = 0;
     virtual auto End() noexcept -> result<void, errors::Error>   = 0;
 
@@ -25,17 +26,18 @@ namespace autumnbot::services
   class ServiceManager
   {
   public:
-    explicit ServiceManager(const std::vector<Service *> &services)
+    explicit ServiceManager(const std::map<std::string, Service *> &services)
       : Services(services)
     {
       logging::info("[service] <ServiceManager>: start services...");
 
-      for (const auto &service : Services)
+      for (const auto &[name, service] : Services)
         service->Start()
           .map_error([&](const auto &error) {
-          logging::error(error.Msg);
-          return error;
-        }).expect("[service] <ServiceManager>: error.");
+            logging::error(error.Msg);
+            return error;
+          })
+          .expect("[service] <ServiceManager>: error.");
 
       logging::info("[service] <ServiceManager>: done");
     }
@@ -44,13 +46,14 @@ namespace autumnbot::services
     {
       logging::info("[service] <ServiceManager>: end services...");
 
-      for (const auto &service : Services)
+      for (const auto &[name, service] : Services)
         {
           service->End()
             .map_error([&](const auto &error) {
-            logging::error(error.Msg);
-            return error;
-          }).expect("[service] <ServiceManager>: error.");
+              logging::error(error.Msg);
+              return error;
+            })
+            .expect("[service] <ServiceManager>: error.");
 
           delete service;
         }
@@ -59,7 +62,7 @@ namespace autumnbot::services
     }
 
   private:
-    const std::vector<Service *> &Services;
+    const std::map<std::string, Service *> &Services;
   };
 }; // namespace autumnbot::services
 
