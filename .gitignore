@@ -1,5 +1,9 @@
-.fake
+/autumnbot/dist/
+
 .vscode/
 .idea/
-bin/
-obj/
+__pycache__/
+
+poetry.lock
+
+.venv/

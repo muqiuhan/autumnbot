@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "autumnbot"
+version = "0.1.0"
+description = ""
+authors = ["Muqiu Han <muqiu-han@outlook.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+opencv-python = "^4.10.0.84"
+
+pykka = "^4.0.2"
+structlog = "^24.2.0"
+pyaudio = "^0.2.14"
+wave = "^0.0.2"
+vosk = "^0.3.45"
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+core = "autumnbot.main:main"
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+
+[virtualenvs]
+in-project = true
