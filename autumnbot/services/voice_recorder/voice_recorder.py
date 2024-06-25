@@ -26,15 +26,56 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import utils.logging
 from preimport import *
+from .. import service
+import pyaudio
+import threading
 
 
-class Service(ThreadingActor, utils.logging.Logging):
-    module_name = "service"
+class VoiceRecorderThread(threading.Thread):
+
+    __stream: pyaudio.PyAudio.Stream
+    __frames: list[bytes]
+    __running: bool = True
+
+    def __init__(self, stream: pyaudio.PyAudio.Stream, frames: list[bytes]) -> None:
+        self.__stream = stream
+        self.__frames = frames
+        threading.Thread.__init__(self)
+
+    def run(self) -> None:
+        while self.__running:
+            self.__frames.append(self.__stream.read(1024))
+
+    def stop(self) -> None:
+        self.__running = False
+
+class VoiceRecorder(service.Service):
+    class_name: str = "VoiceRecorder"
+
+    __pyaudio_instance: pyaudio.PyAudio
+    __stream: pyaudio.PyAudio.Stream
+    __frames: list[bytes]
+    __recorder_thread: VoiceRecorderThread
 
     def __init__(self) -> None:
+        self.info("initialize")
         super().__init__()
+        self.__pyaudio_instance = pyaudio.PyAudio()
+        self.__stream = self.__pyaudio_instance.open(
+            format=pyaudio.paInt16,
+            channels=2,
+            rate=44100,
+            input=True,
+            frames_per_buffer=1024,
+        )
+        self.__frames = list()
+
+    def on_start(self) -> None:
+        self.info("start")
+        self.__recorder_thread = VoiceRecorderThread(self.__stream, self.__frames)
+        self.__recorder_thread.start()
+        return super().on_start()
 
     def on_failure(
         self,
@@ -42,16 +83,21 @@ class Service(ThreadingActor, utils.logging.Logging):
         exception_value: Optional[BaseException],
         traceback: Optional[Any],
     ) -> None:
+        self.error("{}".format(exception_type))
         return super().on_failure(exception_type, exception_value, traceback)
 
-    def on_receive(self, message: Any) -> Any:
-        self.info("receive")
-        return super().on_receive(message)
+    def on_receive(self, message: Any) -> list[bytes]:
+        self.info("request to obtain the current frame buffer")
 
-    def on_start(self) -> None:
-        self.info("start")
-        return super().on_start()
+        while True:
+            if self.__frames:
+                frames = self.__frames.copy()
+                self.__frames.clear()
+                return frames
 
     def on_stop(self) -> None:
         self.info("stop")
+        self.__recorder_thread.stop()
+        self.__stream.stop_stream()
+        self.__stream.close()
         return super().on_stop()

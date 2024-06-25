@@ -28,37 +28,64 @@
 
 from services.speak_to_text.speak_to_text import SpeakToText
 from services.camera_saver.camera_saver import CameraSaver
+from services.voice_recorder.voice_recorder import VoiceRecorder
 from services.service import Service
 from services.service_manager import ServiceManager
 from preimport import *
 
 # These are all services of AutumnBot
-SERVICES: set[Type[Service]] = {CameraSaver, SpeakToText}
+SERVICES: set[Type[Service]] = {
+    # CameraSaver,
+    # SpeakToText,
+    VoiceRecorder
+}
 
 
-def camera_saver_example(service_manager: ServiceManager) -> None:
+async def camera_saver_example(service_manager: ServiceManager) -> None:
     import cv2
-    from time import sleep
 
-    camera = service_manager.get_started_service(CameraSaver)
-    if camera is not None:
-        camera = cast(ActorRef[Any], camera)
-        img = cast(Optional[cv2.typing.MatLike], camera.ask({}))
+    camera_saver = service_manager.get_started_service(CameraSaver)
+    if camera_saver is not None:
+        camera_saver = cast(ActorRef[Any], camera_saver)
+        img = cast(Optional[cv2.typing.MatLike], camera_saver.ask({}))
+
         if img is not None:
             cv2.imshow("test.png", img)
             cv2.waitKey()
 
 
+async def speak_to_text_example(service_manager: ServiceManager) -> None:
+    import os
+
+    speak_to_text = service_manager.get_started_service(SpeakToText)
+    if speak_to_text is not None:
+        speak_to_text = cast(ActorRef[Any], speak_to_text)
+        speak_to_text.ask(os.path.join(os.path.dirname(__file__), "test.wav"))
+
+
+async def voice_recorder_example(service_manager: ServiceManager) -> None:
+    voice_recorder = service_manager.get_started_service(VoiceRecorder)
+
+    if voice_recorder is not None:
+        while True:
+            frames = voice_recorder.ask({})
+            if frames is not []: print(frames)
+
+
 # An example of managing and using all services through ServiceManager
-def example() -> None:
+async def example() -> None:
     service_manager = ServiceManager(SERVICES)
     service_manager.start_all_services()
 
     try:
-        camera_saver_example(service_manager)
+        # await camera_saver_example(service_manager)
+        # await speak_to_text_example(service_manager)
+        await voice_recorder_example(service_manager)
     finally:
         service_manager.stop_all_services()
 
 
 def main() -> None:
-    example()
+    import asyncio
+
+    asyncio.run(example())
