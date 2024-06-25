@@ -26,14 +26,14 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import typing
 import cv2
 from .. import service
+from preimport import *
 
 
 # Capture a frame from the camera
 class CameraSaver(service.Service):
-    class_name = "CameraSaver"
+    CLASS_NAME = "CameraSaver"
     camera0: cv2.VideoCapture = cv2.VideoCapture(0)
 
     def __init__(self) -> None:
@@ -45,15 +45,15 @@ class CameraSaver(service.Service):
         return super().on_start()
 
     # Returns a frame of the camera, or None if an error occurs
-    def on_receive(self, message: typing.Any) -> typing.Optional[cv2.typing.MatLike]:
-        self.info("Request to obtain the current camera picture")
+    def on_receive(self, message: Any) -> Optional[cv2.typing.MatLike]:
+        self.info("request to obtain the current camera picture")
         ret, frame = self.camera0.read()
 
         if ret:
             self.info("Get camera image")
             return frame
         else:
-            self.error("Unable to get camera image")
+            self.error("unable to get camera image")
             return None
 
     def on_stop(self) -> None:
