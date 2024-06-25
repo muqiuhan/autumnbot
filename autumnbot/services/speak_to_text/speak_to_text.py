@@ -37,31 +37,43 @@ import os
 # Chinese speech to text is currently implemented using Vosk and uses a relatively small embedded vosk model.
 # Download the model from here and modify __model to customize the model: https://alphacephei.com/vosk/models
 class SpeakToText(service.Service):
-    __model: vosk.Model
-    class_name: str = "SpeakToText"
 
-    def __init__(self) -> None:
+    CLASS_NAME: str = "SpeakToText"
+    TIMEOUT = 2000
+    
+    __model: vosk.Model
+    __vosk_model_path: str
+    
+    def __init__(self, vosk_model_path="vosk-model-small-cn-0.22") -> None:
         self.info("initialize")
         super().__init__()
+        self.__vosk_model_path = vosk_model_path
         vosk.SetLogLevel(level=-1)
 
     def on_start(self) -> None:
         self.info("start")
         try:
+            # Load vosk model.
             self.__model = vosk.Model(
                 model_path=os.path.join(
-                    os.path.dirname(__file__), "vosk-model-small-cn-0.22"
-                ), lang="zh-cn"
+                    os.path.dirname(__file__), self.__vosk_model_path
+                ),
+                lang="zh-cn",
             )
         except Exception:
             return
         finally:
             return super().on_start()
 
+    # Convert the voice file path in message to text and return.
+    # NOTE: 1. The current message itself is the voice file path.
+    #       2. Currently only supports mono channel, PCM encoded wav format audio.
     def on_receive(self, message: str) -> Optional[str]:
         self.info("request speak to text")
 
         wav_file: wave.Wave_read = wave.open(message, "rb")
+        
+        # Check if the audio format can be parsed.
         if (
             wav_file.getnchannels() != 1
             or wav_file.getsampwidth() != 2
@@ -75,11 +87,12 @@ class SpeakToText(service.Service):
         rec.SetPartialWords(True)
 
         self.info("trying to parse the voice file...")
-        
+
+        # If more than two thousand reads do not stop parsing, stop parsing and return timeout.
         timeout = 0
         while True:
             timeout = timeout + 1
-            if timeout == 2000:
+            if timeout == SpeakToText.TIMEOUT:
                 return "timeout"
             try:
                 if rec.AcceptWaveform(wav_file.readframes(4000)):

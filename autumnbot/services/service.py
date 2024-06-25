@@ -31,7 +31,7 @@ from preimport import *
 
 
 class Service(ThreadingActor, utils.logging.Logging):
-    module_name = "service"
+    MODULE_NAME = "service"
 
     def __init__(self) -> None:
         super().__init__()

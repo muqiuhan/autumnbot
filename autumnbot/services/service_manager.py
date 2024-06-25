@@ -34,8 +34,8 @@ from preimport import *
 
 # Dynamically manage AutumnBot services
 class ServiceManager(utils.logging.Logging):
-    module_name: str = "service"
-    class_name: str = "ServiceManager"
+    MODULE_NAME: str = "service"
+    CLASS_NAME: str = "ServiceManager"
 
     # Initial service collection (not started)
     services: set[Type[Service]]
@@ -53,12 +53,12 @@ class ServiceManager(utils.logging.Logging):
 
     # Get the started service, return None if the service does not exist
     def get_started_service(self, service: Type[Service]) -> Optional[ActorRef[Any]]:
-        self.info("get service {}".format(service.class_name))
+        self.info("get service {}".format(service.CLASS_NAME))
 
         try:
             return self.started_services[service]
         except KeyError:
-            self.error("The service {} is not started.".format(service.class_name))
+            self.error("The service {} is not started.".format(service.CLASS_NAME))
             return None
 
     # Add a service without starting it, If now = True, start immediately。
@@ -77,7 +77,7 @@ class ServiceManager(utils.logging.Logging):
     # Start a service that has not been started. If the service is already started, it will do nothing.
     # NOTE: If the service doesn't exist, something strange might be going on :(
     def start_service(self, service: Type[Service]) -> None:
-        self.info("start service {}".format(service.class_name))
+        self.info("start service {}".format(service.CLASS_NAME))
 
         service_will_be_started = self.__get_service(service)
         if service_will_be_started is not None:
@@ -85,7 +85,7 @@ class ServiceManager(utils.logging.Logging):
                 Type[Service], service_will_be_started
             ).start()
         else:
-            self.warn("unable to start service {}".format(service.class_name))
+            self.warn("unable to start service {}".format(service.CLASS_NAME))
 
     # Stop all services at once
     def stop_all_services(self) -> None:
@@ -95,8 +95,8 @@ class ServiceManager(utils.logging.Logging):
 
     # Stop a service that has been started. If the service is not started, it will do nothing.
     def stop_service(self, service: Type[Service]) -> None:
-        self.info("stop service {}".format(service.class_name))
+        self.info("stop service {}".format(service.CLASS_NAME))
         try:
             self.started_services.pop(service).stop()
         except KeyError:
-            self.error("service {} is not started.".format(service.class_name))
+            self.error("service {} is not started.".format(service.CLASS_NAME))

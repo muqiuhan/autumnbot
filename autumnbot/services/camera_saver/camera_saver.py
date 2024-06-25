@@ -33,7 +33,7 @@ from preimport import *
 
 # Capture a frame from the camera
 class CameraSaver(service.Service):
-    class_name = "CameraSaver"
+    CLASS_NAME = "CameraSaver"
     camera0: cv2.VideoCapture = cv2.VideoCapture(0)
 
     def __init__(self) -> None:

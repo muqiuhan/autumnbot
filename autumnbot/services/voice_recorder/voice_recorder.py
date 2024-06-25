@@ -28,89 +28,43 @@
 
 from preimport import *
 from .. import service
+from .voice_recorder_thread import VoiceRecorderThread
+from . import voice_recorder_config as config
 
 import pyaudio
-import threading
-import audioop
-import wave
-import time
 
 
-class VoiceRecorderThread(threading.Thread):
-
-    __stream: pyaudio.PyAudio.Stream
-    __frames: list[bytes]
-    __running: bool = True
-    __voice_list: list[str]
-    __sample_width: int
-
-    def __init__(
-        self,
-        stream: pyaudio.PyAudio.Stream,
-        voice_list: list[str],
-        sample_width: int,
-    ) -> None:
-        self.__stream = stream
-        self.__voice_list = voice_list
-        self.__sample_width = sample_width
-        self.__frames = list()
-        threading.Thread.__init__(self)
-
-    def run(self) -> None:
-        low_audio_flag = 0
-        detect_count = 0
-
-        while self.__running:
-            detect_count += 1
-            data = self.__stream.read(1024)
-            rms = audioop.rms(data, 2)
-            low_audio_flag = 0 if rms > 5000 else low_audio_flag + 1
-
-            if low_audio_flag > 100:
-                if len(self.__frames) <= (int(44100 / 1024 * 2) + 50):
-                    low_audio_flag = 0
-                    continue
-                path = "{}.wav".format(int(time.time()))
-                wav_file = wave.open(path, "wb")
-                wav_file.setnchannels(1)
-                wav_file.setsampwidth(self.__sample_width)
-                wav_file.setframerate(44100)
-                wav_file.writeframes(b"".join(self.__frames))
-                wav_file.close()
-                self.__frames.clear()
-                low_audio_flag = 0
-                self.__voice_list.append(path)
-                continue
-
-            self.__frames.append(data)
-
-    def stop(self) -> None:
-        self.__running = False
-
-
+# Smartly record audio and store it as wav file for use by other services.
 class VoiceRecorder(service.Service):
-    class_name: str = "VoiceRecorder"
+    CLASS_NAME: str = "VoiceRecorder"
 
     __pyaudio_instance: pyaudio.PyAudio
     __stream: pyaudio.PyAudio.Stream
+
+    # Store valid audio paths
     __voice_list: list[str]
+
     __recorder_thread: VoiceRecorderThread
 
     def __init__(self) -> None:
         self.info("initialize")
         super().__init__()
         self.__pyaudio_instance = pyaudio.PyAudio()
-        self.__stream = self.__pyaudio_instance.open(
-            format=pyaudio.paInt16,
-            channels=1,
-            rate=44100,
-            input=True,
-            frames_per_buffer=1024,
-        )
         self.__voice_list = list()
 
     def on_start(self) -> None:
         self.info("start")
+
+        # Turn on the microphone using configuration parameters.
+        self.__stream = self.__pyaudio_instance.open(
+            format=config.FORMAT,
+            channels=config.CHANNELS,
+            rate=config.RATE,
+            input=True,
+            frames_per_buffer=config.FRAMES_PER_BUFFER,
+        )
+
+        # Put the recording operation into a new thread to execute.
         self.__recorder_thread = VoiceRecorderThread(
             self.__stream,
             self.__voice_list,
@@ -128,6 +82,7 @@ class VoiceRecorder(service.Service):
         self.error("{}".format(exception_type))
         return super().on_failure(exception_type, exception_value, traceback)
 
+    # Get the latest valid audio path. If there is no valid audio, it will block until the acquisition is successful.
     def on_receive(self, message: Any) -> str:
         while True:
             if self.__voice_list:
