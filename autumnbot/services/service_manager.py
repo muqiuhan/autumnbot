@@ -58,7 +58,7 @@ class ServiceManager(utils.logging.Logging):
     def get_started_service(
         self, service: typing.Type[Service]
     ) -> typing.Optional[pykka.ActorRef[typing.Any]]:
-        self.info("get started service {}".format(service))
+        self.info("get service {}".format(service))
 
         try:
             return self.started_services[service]
@@ -74,7 +74,8 @@ class ServiceManager(utils.logging.Logging):
             self.start_service(service)
 
     # Start all services at once
-    def start_all_service(self) -> None:
+    def start_all_services(self) -> None:
+        self.info("start all services")
         for service_name in self.services:
             self.start_service(service_name)
 
@@ -89,10 +90,11 @@ class ServiceManager(utils.logging.Logging):
                 typing.Type[Service], service_will_be_started
             ).start()
         else:
-            self.warn("Unable to start service {}".format(service))
+            self.warn("unable to start service {}".format(service))
 
     # Stop all services at once
-    def stop_all_service(self) -> None:
+    def stop_all_services(self) -> None:
+        self.info("stop all services")
         for service_name in self.services:
             self.stop_service(service_name)
 
@@ -102,4 +104,4 @@ class ServiceManager(utils.logging.Logging):
         try:
             self.started_services.pop(service).stop()
         except KeyError:
-            self.error("The service {} is not started.".format(service))
+            self.error("service {} is not started.".format(service))

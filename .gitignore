@@ -7,3 +7,5 @@ __pycache__/
 poetry.lock
 
 .venv/
+
+/autumnbot/services/speak_to_text

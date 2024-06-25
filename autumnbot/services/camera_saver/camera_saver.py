@@ -46,14 +46,14 @@ class CameraSaver(service.Service):
 
     # Returns a frame of the camera, or None if an error occurs
     def on_receive(self, message: typing.Any) -> typing.Optional[cv2.typing.MatLike]:
-        self.info("Request to obtain the current camera picture")
+        self.info("request to obtain the current camera picture")
         ret, frame = self.camera0.read()
 
         if ret:
             self.info("Get camera image")
             return frame
         else:
-            self.error("Unable to get camera image")
+            self.error("unable to get camera image")
             return None
 
     def on_stop(self) -> None:
