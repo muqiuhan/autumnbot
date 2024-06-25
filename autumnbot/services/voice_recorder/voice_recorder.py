@@ -28,8 +28,12 @@
 
 from preimport import *
 from .. import service
+
 import pyaudio
 import threading
+import audioop
+import wave
+import time
 
 
 class VoiceRecorderThread(threading.Thread):
@@ -37,25 +41,59 @@ class VoiceRecorderThread(threading.Thread):
     __stream: pyaudio.PyAudio.Stream
     __frames: list[bytes]
     __running: bool = True
+    __voice_list: list[str]
+    __sample_width: int
 
-    def __init__(self, stream: pyaudio.PyAudio.Stream, frames: list[bytes]) -> None:
+    def __init__(
+        self,
+        stream: pyaudio.PyAudio.Stream,
+        voice_list: list[str],
+        sample_width: int,
+    ) -> None:
         self.__stream = stream
-        self.__frames = frames
+        self.__voice_list = voice_list
+        self.__sample_width = sample_width
+        self.__frames = list()
         threading.Thread.__init__(self)
 
     def run(self) -> None:
+        low_audio_flag = 0
+        detect_count = 0
+
         while self.__running:
-            self.__frames.append(self.__stream.read(1024))
+            detect_count += 1
+            data = self.__stream.read(1024)
+            rms = audioop.rms(data, 2)
+            low_audio_flag = 0 if rms > 5000 else low_audio_flag + 1
+
+            if low_audio_flag > 100:
+                if len(self.__frames) <= (int(44100 / 1024 * 2) + 50):
+                    low_audio_flag = 0
+                    continue
+                path = "{}.wav".format(int(time.time()))
+                wav_file = wave.open(path, "wb")
+                wav_file.setnchannels(1)
+                wav_file.setsampwidth(self.__sample_width)
+                wav_file.setframerate(44100)
+                wav_file.writeframes(b"".join(self.__frames))
+                wav_file.close()
+                self.__frames.clear()
+                low_audio_flag = 0
+                self.__voice_list.append(path)
+                continue
+
+            self.__frames.append(data)
 
     def stop(self) -> None:
         self.__running = False
+
 
 class VoiceRecorder(service.Service):
     class_name: str = "VoiceRecorder"
 
     __pyaudio_instance: pyaudio.PyAudio
     __stream: pyaudio.PyAudio.Stream
-    __frames: list[bytes]
+    __voice_list: list[str]
     __recorder_thread: VoiceRecorderThread
 
     def __init__(self) -> None:
@@ -64,16 +102,20 @@ class VoiceRecorder(service.Service):
         self.__pyaudio_instance = pyaudio.PyAudio()
         self.__stream = self.__pyaudio_instance.open(
             format=pyaudio.paInt16,
-            channels=2,
+            channels=1,
             rate=44100,
             input=True,
             frames_per_buffer=1024,
         )
-        self.__frames = list()
+        self.__voice_list = list()
 
     def on_start(self) -> None:
         self.info("start")
-        self.__recorder_thread = VoiceRecorderThread(self.__stream, self.__frames)
+        self.__recorder_thread = VoiceRecorderThread(
+            self.__stream,
+            self.__voice_list,
+            self.__pyaudio_instance.get_sample_size(pyaudio.paInt16),
+        )
         self.__recorder_thread.start()
         return super().on_start()
 
@@ -86,18 +128,23 @@ class VoiceRecorder(service.Service):
         self.error("{}".format(exception_type))
         return super().on_failure(exception_type, exception_value, traceback)
 
-    def on_receive(self, message: Any) -> list[bytes]:
-        self.info("request to obtain the current frame buffer")
-
+    def on_receive(self, message: Any) -> str:
         while True:
-            if self.__frames:
-                frames = self.__frames.copy()
-                self.__frames.clear()
-                return frames
+            if self.__voice_list:
+                return self.__voice_list.pop()
+
+    def __clean_voices(self) -> None:
+        import os
+
+        for voice in self.__voice_list:
+            os.remove(voice)
 
     def on_stop(self) -> None:
         self.info("stop")
         self.__recorder_thread.stop()
+        self.__recorder_thread.join()
         self.__stream.stop_stream()
         self.__stream.close()
+        self.__pyaudio_instance.terminate()
+        self.__clean_voices()
         return super().on_stop()

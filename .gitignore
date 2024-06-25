@@ -8,4 +8,4 @@ poetry.lock
 
 .venv/
 
-/autumnbot/services/speak_to_text
+/autumnbot/services/speak_to_text/vosk-model-small-cn-0.22

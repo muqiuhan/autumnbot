@@ -51,17 +51,15 @@ class SpeakToText(service.Service):
             self.__model = vosk.Model(
                 model_path=os.path.join(
                     os.path.dirname(__file__), "vosk-model-small-cn-0.22"
-                )
+                ), lang="zh-cn"
             )
         except Exception:
             return
         finally:
             return super().on_start()
 
-    # Returns a frame of the camera, or None if an error occurs
-    # The message is the path of voice
     def on_receive(self, message: str) -> Optional[str]:
-        self.info("Request speak to text")
+        self.info("request speak to text")
 
         wav_file: wave.Wave_read = wave.open(message, "rb")
         if (
@@ -69,7 +67,7 @@ class SpeakToText(service.Service):
             or wav_file.getsampwidth() != 2
             or wav_file.getcomptype() != "NONE"
         ):
-            self.error("Audio file must be WAV format mono PCM.")
+            self.error("audio file must be WAV format mono PCM.")
             return None
 
         rec = vosk.KaldiRecognizer(self.__model, wav_file.getframerate())
@@ -77,7 +75,12 @@ class SpeakToText(service.Service):
         rec.SetPartialWords(True)
 
         self.info("trying to parse the voice file...")
+        
+        timeout = 0
         while True:
+            timeout = timeout + 1
+            if timeout == 2000:
+                return "timeout"
             try:
                 if rec.AcceptWaveform(wav_file.readframes(4000)):
                     text = json.loads(rec.Result())["text"]

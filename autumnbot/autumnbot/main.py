@@ -36,12 +36,12 @@ from preimport import *
 # These are all services of AutumnBot
 SERVICES: set[Type[Service]] = {
     # CameraSaver,
-    # SpeakToText,
-    VoiceRecorder
+    SpeakToText,
+    VoiceRecorder,
 }
 
 
-async def camera_saver_example(service_manager: ServiceManager) -> None:
+def camera_saver_example(service_manager: ServiceManager) -> None:
     import cv2
 
     camera_saver = service_manager.get_started_service(CameraSaver)
@@ -54,38 +54,38 @@ async def camera_saver_example(service_manager: ServiceManager) -> None:
             cv2.waitKey()
 
 
-async def speak_to_text_example(service_manager: ServiceManager) -> None:
+def voice_recorder_example(service_manager: ServiceManager) -> None:
     import os
 
-    speak_to_text = service_manager.get_started_service(SpeakToText)
-    if speak_to_text is not None:
-        speak_to_text = cast(ActorRef[Any], speak_to_text)
-        speak_to_text.ask(os.path.join(os.path.dirname(__file__), "test.wav"))
-
-
-async def voice_recorder_example(service_manager: ServiceManager) -> None:
     voice_recorder = service_manager.get_started_service(VoiceRecorder)
+    speak_to_text = service_manager.get_started_service(SpeakToText)
 
-    if voice_recorder is not None:
+    if voice_recorder is not None and speak_to_text is not None:
+        pre_voice = ""
         while True:
-            frames = voice_recorder.ask({})
-            if frames is not []: print(frames)
+            voice = voice_recorder.ask({})
+            if voice == pre_voice:
+                continue
+            else:
+                pre_voice = voice
+                text = cast(str, speak_to_text.ask(voice))
+                if "退" in text and "出" in text:
+                    break
+                os.remove(cast(str, voice))
 
 
 # An example of managing and using all services through ServiceManager
-async def example() -> None:
+def example() -> None:
     service_manager = ServiceManager(SERVICES)
     service_manager.start_all_services()
 
     try:
         # await camera_saver_example(service_manager)
         # await speak_to_text_example(service_manager)
-        await voice_recorder_example(service_manager)
+        voice_recorder_example(service_manager)
     finally:
         service_manager.stop_all_services()
 
 
 def main() -> None:
-    import asyncio
-
-    asyncio.run(example())
+    example()
