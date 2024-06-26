@@ -72,8 +72,9 @@ class VoiceRecorderThread(threading.Thread, utils.logging.Logging):
 
             if low_audio_flag > config.MAX_LOW_AUDIO_FLAG:
                 if len(self.__frames) <= (
-                    int(config.RATE / config.FRAMES_PER_BUFFER * 2) + 50
+                    int(config.RATE / config.FRAMES_PER_BUFFER * 2) + 100
                 ):
+                    self.__frames.clear()
                     low_audio_flag = 0
                     continue
                 path = "{}.wav".format(int(time.time()))
