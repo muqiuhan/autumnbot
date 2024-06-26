@@ -26,6 +26,6 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Any, Optional, Union, cast, Type
+from typing import Any, Optional, Sequence, Union, cast, Type, Callable, Mapping, Iterator, Literal
 from pykka import ActorRef, ThreadingActor
 from abc import ABC as AbstractClass, abstractmethod

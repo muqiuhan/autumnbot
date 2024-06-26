@@ -29,7 +29,10 @@
 from preimport import *
 from .ollama_message import OllamaMessage
 from .. import service
+
 import ollama
+import alive_progress
+
 
 class OllamaClient(service.Service):
 
@@ -46,13 +49,16 @@ class OllamaClient(service.Service):
         self, message: OllamaMessage
     ) -> Optional[Union[Mapping[str, Any], Iterator[Mapping[str, Any]]]]:
         self.info("request message")
-        
-        request = message.to_request()
-        
-        if request is not None:
-            response = cast(Callable, request)(self.__context)
-            if response is not None:
-                response_message = response["message"]
-                self.__context.append(response_message)
-                self.info("response: {}".format(response_message["content"]))
-                return response_message
+
+        with alive_progress.alive_bar(3) as bar:
+            request = message.to_request()
+            bar()
+
+            if request is not None:
+                response = cast(Callable, request)(self.__context)
+                bar()
+                if response is not None:
+                    response_message = response["message"]
+                    self.__context.append(response_message)
+                    bar()
+                    return response_message
