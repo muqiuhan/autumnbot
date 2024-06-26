@@ -32,5 +32,5 @@ FORMAT: int = pyaudio.paInt16
 CHANNELS: int = 1
 RATE: int = 44100
 FRAMES_PER_BUFFER: int = 1024
-AUDIO_MIN_RMS: int = 5000
+AUDIO_MIN_RMS: int = 200
 MAX_LOW_AUDIO_FLAG: int = 100

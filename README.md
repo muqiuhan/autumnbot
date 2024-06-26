@@ -12,6 +12,23 @@ Simple home AI
 
 AutumnBot is a very simple home AI solution. You can deploy it on an old laptop that has been abandoned. The camera of this old laptop will become AutumnBot's eyes, the microphone will become AutumnBot's ears, and the sound player will become AutumnBot's mouth...
 
+# Deploy
+
+> [!IMPORTANT]
+> AutumnBot is currently only tested and depolyed on Linux. Other platforms are the oretically supported, but may require more work.
+
+## Dependencies on Linux
+
+| Application | Version |
+| ----------- | ------- |
+| espeak      | 1.48.*  |
+| ollama      | 0.1.44  |
+
+| Library       | Version |
+| ------------- | ------- |
+| libportaudio2 | 1.11    |
+| opencv        | 4.9.*   |
+
 # [LICENSE](./LICENSE)
 
 ```

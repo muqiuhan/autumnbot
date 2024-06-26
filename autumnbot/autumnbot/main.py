@@ -26,6 +26,9 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from typing import Text
+from services.text_to_speak.text_to_speak import TextToSpeak
+from services.ollama_client.ollama_client import OllamaClient
 from services.speak_to_text.speak_to_text import SpeakToText
 from services.camera_saver.camera_saver import CameraSaver
 from services.voice_recorder.voice_recorder import VoiceRecorder
@@ -35,18 +38,19 @@ from preimport import *
 
 # These are all services of AutumnBot
 SERVICES: set[Type[Service]] = {
-    # CameraSaver,
+    CameraSaver,
     SpeakToText,
     VoiceRecorder,
+    OllamaClient,
+    TextToSpeak,
 }
 
 
-def camera_saver_example(service_manager: ServiceManager) -> None:
+def example1(service_manager: ServiceManager) -> None:
     import cv2
 
     camera_saver = service_manager.get_started_service(CameraSaver)
     if camera_saver is not None:
-        camera_saver = cast(ActorRef[Any], camera_saver)
         img = cast(Optional[cv2.typing.MatLike], camera_saver.ask({}))
 
         if img is not None:
@@ -54,38 +58,50 @@ def camera_saver_example(service_manager: ServiceManager) -> None:
             cv2.waitKey()
 
 
-def voice_recorder_example(service_manager: ServiceManager) -> None:
+def example2(service_manager: ServiceManager) -> None:
+    from services.ollama_client.ollama_message import OllamaMessage
     import os
 
+    ollama_client = service_manager.get_started_service(OllamaClient)
     voice_recorder = service_manager.get_started_service(VoiceRecorder)
     speak_to_text = service_manager.get_started_service(SpeakToText)
+    text_to_speak = service_manager.get_started_service(TextToSpeak)
 
-    if voice_recorder is not None and speak_to_text is not None:
+    if (
+        ollama_client is not None
+        and voice_recorder is not None
+        and speak_to_text is not None
+        and text_to_speak is not None
+    ):
         pre_voice = ""
         while True:
             voice = voice_recorder.ask({})
             if voice == pre_voice:
                 continue
             else:
-                pre_voice = voice
-                text = cast(str, speak_to_text.ask(voice))
-                if "退" in text and "出" in text:
-                    break
+                message = ollama_client.ask(
+                    OllamaMessage(content=cast(str, speak_to_text.ask(voice)))
+                )
+                if message is not None:
+                    message = cast(dict[str, Any], message)["content"]
+                    text_to_speak.ask(message)
+                    
+                    if "再" in message and "见" in message:
+                        break
+
                 os.remove(cast(str, voice))
 
 
 # An example of managing and using all services through ServiceManager
-def example() -> None:
+def examples() -> None:
     service_manager = ServiceManager(SERVICES)
     service_manager.start_all_services()
 
     try:
-        # await camera_saver_example(service_manager)
-        # await speak_to_text_example(service_manager)
-        voice_recorder_example(service_manager)
+        example2(service_manager)
     finally:
         service_manager.stop_all_services()
 
 
 def main() -> None:
-    example()
+    examples()

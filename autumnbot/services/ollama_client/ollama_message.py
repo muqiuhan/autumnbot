@@ -26,29 +26,65 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import utils.logging
+from typing import Sequence
 from preimport import *
+import utils.logging
+
+import ollama
 
 
-class Service(ThreadingActor, utils.logging.Logging):
-    MODULE_NAME = "service"
+# api request for generating ollama
+class OllamaMessage(utils.logging.Logging):
 
-    def __init__(self) -> None:
-        super().__init__()
+    MODULE_NAME: str = "service"
+    CLASS_NAME: str = "OllamaMessage"
 
-    def on_failure(
+    # Request type (chat or generate)
+    typ: Optional[str]
+    content: str
+
+    # model called
+    model: str
+
+    def __init__(self, content: str, typ: str = "chat", model: str = "qwen") -> None:
+        super().__init__(self.MODULE_NAME, self.CLASS_NAME)
+        self.info("initialize")
+
+        self.typ = OllamaMessage.__check_typ(typ)
+        self.content = content
+        self.model = model
+
+    @staticmethod
+    # Check if request type is valid
+    def __check_typ(typ: str) -> Optional[str]:
+        match typ:
+            case "chat":
+                return typ
+
+    def __to_request_message(self) -> ollama.Message:
+        return {"role": "user", "content": self.content}
+
+    # Return the corresponding request function according to self.__typ
+    def to_request(
         self,
-        exception_type: Optional[type[BaseException]],
-        exception_value: Optional[BaseException],
-        traceback: Optional[Any],
-    ) -> None:
-        return super().on_failure(exception_type, exception_value, traceback)
+    ) -> Optional[
+        Callable[[Any], Union[Mapping[str, Any], Iterator[Mapping[str, Any]]]]
+    ]:
+        if self.typ is None:
+            return None
 
-    def on_receive(self, message: Any) -> Any:
-        return super().on_receive(message)
+        typ = cast(str, self.typ)
 
-    def on_start(self) -> None:
-        return super().on_start()
+        match typ:
+            case "chat":
+                return self.__to_chat_request()
 
-    def on_stop(self) -> None:
-        return super().on_stop()
+    def __to_chat_request(
+        self,
+    ) -> Callable[
+        [list[ollama.Message]],
+        Union[Mapping[str, Any], Iterator[Mapping[str, Any]]],
+    ]:
+        return lambda history: ollama.chat(
+            model=self.model, messages=[self.__to_request_message()]
+        )

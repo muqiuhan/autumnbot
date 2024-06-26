@@ -1,10 +1,10 @@
 # Copyright (c) 2024 Muqiu Han
-# 
+#
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright notice,
 #       this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright notice,
@@ -13,7 +13,7 @@
 #     * Neither the name of AutumnBot nor the names of its contributors
 #       may be used to endorse or promote products derived from this software
 #       without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -26,6 +26,37 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Any, Optional, Sequence, Union, cast, Type, Callable, Mapping, Iterator, Literal
-from pykka import ActorRef, ThreadingActor
-from abc import ABC as AbstractClass, abstractmethod
+from .. import service
+from preimport import *
+
+import pyttsx3
+
+
+# Use pyttsx3 to convert text to speech. On Linux, pyttsx3 calls espeak.
+class TextToSpeak(service.Service):
+    CLASS_NAME: str = "TextToSpeak"
+
+    __engine: pyttsx3.Engine
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.info("initialize")
+        self.__engine = pyttsx3.init()
+
+        # Set the engine used by pyttsx3 to enable Chinese support
+        self.__engine.setProperty("voice", "zh")
+
+    def on_start(self) -> None:
+        super().on_start()
+        self.info("start")
+
+    def on_stop(self) -> None:
+        super().on_stop()
+        self.info("stop")
+
+    def on_receive(self, message: str, now: bool = True) -> None:
+        self.info("request text to speak")
+        if now:
+            self.__engine.say(message)
+            self.__engine.runAndWait()
