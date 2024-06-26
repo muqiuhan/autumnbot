@@ -32,6 +32,7 @@ import json
 import wave
 import vosk
 import os
+import alive_progress
 
 
 # Chinese speech to text is currently implemented using Vosk and uses a relatively small embedded vosk model.
@@ -40,10 +41,10 @@ class SpeakToText(service.Service):
 
     CLASS_NAME: str = "SpeakToText"
     TIMEOUT = 2000
-    
+
     __model: vosk.Model
     __vosk_model_path: str
-    
+
     def __init__(self, vosk_model_path="vosk-model-small-cn-0.22") -> None:
         self.info("initialize")
         super().__init__()
@@ -71,8 +72,26 @@ class SpeakToText(service.Service):
     def on_receive(self, message: str) -> Optional[str]:
         self.info("request speak to text")
 
-        wav_file: wave.Wave_read = wave.open(message, "rb")
-        
+        with alive_progress.alive_bar(3) as bar:
+            wav_file = self.__open_wav_file(message)
+            bar()
+
+            if wav_file is not None:
+                self.__check_wavfile(wav_file)
+            bar()
+
+            if wav_file is not None:
+                voice_text = self.__recognizer(wav_file)
+                bar()
+                return voice_text
+
+    def __open_wav_file(self, path: str) -> Optional[wave.Wave_read]:
+        try:
+            return wave.open(path, "rb")
+        except Exception:
+            self.error("unable to open the wav file: {}".format(path))
+
+    def __check_wavfile(self, wav_file: wave.Wave_read) -> Optional[wave.Wave_read]:
         # Check if the audio format can be parsed.
         if (
             wav_file.getnchannels() != 1
@@ -82,6 +101,10 @@ class SpeakToText(service.Service):
             self.error("audio file must be WAV format mono PCM.")
             return None
 
+        else:
+            return wav_file
+
+    def __recognizer(self, wav_file: wave.Wave_read) -> Optional[str]:
         rec = vosk.KaldiRecognizer(self.__model, wav_file.getframerate())
         rec.SetWords(True)
         rec.SetPartialWords(True)
@@ -90,14 +113,14 @@ class SpeakToText(service.Service):
 
         # If more than two thousand reads do not stop parsing, stop parsing and return timeout.
         timeout = 0
+
         while True:
             timeout = timeout + 1
             if timeout == SpeakToText.TIMEOUT:
                 return "timeout"
             try:
                 if rec.AcceptWaveform(wav_file.readframes(4000)):
-                    text = json.loads(rec.Result())["text"]
-                    self.info("speak to text: {}".format(text))
+                    text = json.loads(rec.Result())["text"].replace(" ", "")
                     return text
             except Exception as e:
                 self.error("unable to parse the voice file: {}".format(e))
