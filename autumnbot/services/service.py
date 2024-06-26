@@ -45,13 +45,10 @@ class Service(ThreadingActor, utils.logging.Logging):
         return super().on_failure(exception_type, exception_value, traceback)
 
     def on_receive(self, message: Any) -> Any:
-        self.info("receive")
         return super().on_receive(message)
 
     def on_start(self) -> None:
-        self.info("start")
         return super().on_start()
 
     def on_stop(self) -> None:
-        self.info("stop")
         return super().on_stop()

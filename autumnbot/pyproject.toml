@@ -16,6 +16,7 @@ vosk = "^0.3.45"
 
 ollama = "^0.2.1"
 alive-progress = "^3.1.5"
+pyttsx3 = "^2.90"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

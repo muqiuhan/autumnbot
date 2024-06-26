@@ -26,24 +26,26 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from preimport import *
-from .ollama_message import OllamaMessage
 from .. import service
+from preimport import *
 
-import ollama
-import alive_progress
+import pyttsx3
 
-class OllamaClient(service.Service):
 
-    CLASS_NAME: str = "Ollama"
+# Use pyttsx3 to convert text to speech. On Linux, pyttsx3 calls espeak.
+class TextToSpeak(service.Service):
+    CLASS_NAME: str = "TextToSpeak"
 
-    # Request Ollama's message context. In chat mode, some models can optimize output content through context.
-    __context: list[ollama.Message]
+    __engine: pyttsx3.Engine
 
     def __init__(self) -> None:
         super().__init__()
+
         self.info("initialize")
-        self.__context = list()
+        self.__engine = pyttsx3.init()
+
+        # Set the engine used by pyttsx3 to enable Chinese support
+        self.__engine.setProperty("voice", "zh")
 
     def on_start(self) -> None:
         super().on_start()
@@ -53,18 +55,8 @@ class OllamaClient(service.Service):
         super().on_stop()
         self.info("stop")
 
-    def on_receive(self, message: OllamaMessage) -> Optional[dict[str, Any]]:
-        self.info("request message")
-
-        with alive_progress.alive_bar(3) as bar:
-            request = message.to_request()
-            bar()
-
-            if request is not None:
-                response = cast(Callable, request)(self.__context)
-                bar()
-                if response is not None:
-                    response_message = response["message"]
-                    self.__context.append(response_message)
-                    bar()
-                    return response_message
+    def on_receive(self, message: str, now: bool = True) -> None:
+        self.info("request text to speak")
+        if now:
+            self.__engine.say(message)
+            self.__engine.runAndWait()
